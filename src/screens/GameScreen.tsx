@@ -471,7 +471,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    overflow: 'hidden',
+    // Do not clip tray halos here — GameBackground root already clips to screen
   },
   unit: {
     alignItems: 'center',

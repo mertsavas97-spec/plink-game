@@ -30,25 +30,29 @@ function TrayHalo({
   panelW: number;
   panelH: number;
 }) {
-  const pad = 48;
-  const w = panelW + pad * 2;
-  const h = panelH + pad * 2;
+  // Large soft pads so gradient reaches 0 before any layout clip
+  const padX = Math.round(panelW * 0.22);
+  const padY = Math.round(panelH * 0.16);
+  const w = panelW + padX * 2;
+  const h = panelH + padY * 2;
   return (
     <Svg
       pointerEvents="none"
       width={w}
       height={h}
-      style={[styles.haloSvg, { left: -pad, top: -pad }]}
+      style={[styles.haloSvg, { marginLeft: -padX, marginTop: -padY }]}
     >
       <Defs>
-        <RadialGradient id="haloBlue" cx="28%" cy="22%" rx="55%" ry="48%">
+        <RadialGradient id="haloBlue" cx="30%" cy="24%" rx="62%" ry="58%">
           <Stop offset="0%" stopColor={colors.glowBlueHex} stopOpacity={0.1} />
-          <Stop offset="55%" stopColor={colors.glowBlueHex} stopOpacity={0.04} />
+          <Stop offset="40%" stopColor={colors.glowBlueHex} stopOpacity={0.05} />
+          <Stop offset="75%" stopColor={colors.glowBlueHex} stopOpacity={0.015} />
           <Stop offset="100%" stopColor={colors.glowBlueHex} stopOpacity={0} />
         </RadialGradient>
-        <RadialGradient id="haloMagenta" cx="78%" cy="82%" rx="58%" ry="52%">
+        <RadialGradient id="haloMagenta" cx="76%" cy="80%" rx="65%" ry="60%">
           <Stop offset="0%" stopColor={colors.glowMagentaHex} stopOpacity={0.1} />
-          <Stop offset="55%" stopColor={colors.glowMagentaHex} stopOpacity={0.035} />
+          <Stop offset="40%" stopColor={colors.glowMagentaHex} stopOpacity={0.045} />
+          <Stop offset="75%" stopColor={colors.glowMagentaHex} stopOpacity={0.012} />
           <Stop offset="100%" stopColor={colors.glowMagentaHex} stopOpacity={0} />
         </RadialGradient>
       </Defs>
