@@ -297,6 +297,8 @@ const styles = StyleSheet.create({
   iconBtn: {
     width: layout.iconBtn,
     height: layout.iconBtn,
+    minWidth: layout.iconBtn,
+    minHeight: layout.iconBtn,
     borderRadius: layout.buttonRadius,
     backgroundColor: colors.surface,
     borderWidth: 1,

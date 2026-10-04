@@ -37,32 +37,39 @@ export function GameOverScreen({ navigation, route }: Props) {
 
   return (
     <ScreenBackground showDecorTiles>
-      <SafeAreaView style={styles.safe}>
-        {/* Confetti behind all result chrome */}
-        <Confetti />
-        <View style={styles.content}>
-          <Animated.View style={[styles.iconWrap, iconStyle]}>
-            {won ? (
-              <IconTrophy size={72} color={colors.gold} />
-            ) : (
-              <IconHappy size={72} color={colors.gold} />
-            )}
-          </Animated.View>
-          <Text style={styles.title}>{won ? 'Board Cleared!' : 'Game Over'}</Text>
-          {isNewHigh ? (
-            <View style={styles.badge}>
-              <IconCrown size={16} />
-              <Text style={styles.newHigh}>New High Score!</Text>
-            </View>
-          ) : null}
+      <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
+        {/* Confetti behind all text/cards */}
+        <View style={styles.confettiHost} pointerEvents="none">
+          <Confetti />
+        </View>
 
-          <Card style={styles.card}>
-            <Text style={styles.meta}>Score</Text>
-            <Text style={styles.score}>{formatScore(score)}</Text>
-            <View style={styles.divider} />
-            <Text style={styles.meta}>Best</Text>
-            <Text style={styles.best}>{formatScore(best)}</Text>
-          </Card>
+        <View style={styles.content}>
+          <View style={styles.resultGroup}>
+            <Animated.View style={[styles.iconWrap, iconStyle]}>
+              {won ? (
+                <IconTrophy size={72} color={colors.gold} />
+              ) : (
+                <IconHappy size={72} color={colors.gold} />
+              )}
+            </Animated.View>
+            <Text style={styles.title}>{won ? 'Board Cleared!' : 'Game Over'}</Text>
+            {isNewHigh ? (
+              <View style={styles.badge}>
+                <IconCrown size={16} />
+                <Text style={styles.newHigh}>New High Score!</Text>
+              </View>
+            ) : (
+              <View style={styles.badgePlaceholder} />
+            )}
+
+            <Card style={styles.card}>
+              <Text style={styles.meta}>Score</Text>
+              <Text style={styles.score}>{formatScore(score)}</Text>
+              <View style={styles.divider} />
+              <Text style={styles.meta}>Best</Text>
+              <Text style={styles.best}>{formatScore(best)}</Text>
+            </Card>
+          </View>
         </View>
 
         <View style={styles.footer}>
@@ -88,12 +95,18 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: layout.screenPad,
   },
+  confettiHost: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 0,
+  },
   content: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    gap: 14,
     zIndex: 2,
+  },
+  resultGroup: {
+    alignItems: 'center',
+    gap: 12,
   },
   iconWrap: {
     width: 120,
@@ -104,7 +117,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
   },
   title: {
     ...typeScale.display,
@@ -120,7 +132,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(232,197,71,0.16)',
     borderWidth: 1,
     borderColor: colors.gold,
+    minHeight: 36,
   },
+  badgePlaceholder: { height: 36 },
   newHigh: {
     fontFamily: fonts.bold,
     color: colors.gold,
@@ -128,7 +142,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   card: {
-    marginTop: 8,
+    marginTop: 4,
     width: '100%',
     alignItems: 'center',
     paddingVertical: 24,
@@ -157,5 +171,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border,
     marginVertical: 16,
   },
-  footer: { gap: 12, paddingBottom: 20, zIndex: 2 },
+  footer: {
+    gap: 12,
+    paddingBottom: 16,
+    zIndex: 2,
+  },
 });

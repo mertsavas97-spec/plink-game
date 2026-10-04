@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import {
   Animated,
   Easing,
@@ -75,21 +75,20 @@ const SELECTED: Array<Set<string>> = [
   new Set(['1,1', '2,1', '1,2', '2,2']),
 ];
 
-const TILE = layout.onboardingDemoTile;
-/** Hand sits on bottom-right of highlighted tile at col=2,row=2 (one tile in from edges). */
-const HAND_INSET = layout.boardPad + TILE * 0.35;
-
 function DemoBoard({
   board,
   selected,
   showHand,
   parallax,
+  tileSize,
 }: {
   board: TileColorId[][];
   selected: Set<string>;
   showHand?: boolean;
   parallax: Animated.AnimatedInterpolation<number>;
+  tileSize: number;
 }) {
+  const handInset = layout.boardPad + tileSize * 0.35;
   return (
     <Animated.View
       style={[
@@ -104,14 +103,14 @@ function DemoBoard({
               <Tile
                 key={`${r}-${c}`}
                 colorId={id}
-                size={TILE}
+                size={tileSize}
                 showLetter
                 selected={selected.has(`${c},${r}`)}
               />
             ))}
           </View>
         ))}
-        {showHand ? <TapHand right={HAND_INSET} bottom={HAND_INSET} /> : null}
+        {showHand ? <TapHand right={handInset} bottom={handInset} /> : null}
       </View>
     </Animated.View>
   );
@@ -165,6 +164,23 @@ export function OnboardingScreen({ navigation }: Props) {
   const scrollX = useRef(new Animated.Value(0)).current;
   const isLast = step === STEPS.length - 1;
 
+  const tileSize = useMemo(() => {
+    const targetW = pageW * layout.onboardingIllustrationWidthRatio;
+    const cols = layout.onboardingDemoCols;
+    const gapRatio = layout.tileGapRatio;
+    const pad = layout.boardPad * 2;
+    const inner = targetW - pad;
+    const pitch = inner / cols;
+    return Math.max(36, Math.floor(pitch / (1 + gapRatio)));
+  }, [pageW]);
+
+  const illustrationH = useMemo(() => {
+    const cols = layout.onboardingDemoCols;
+    const gap = Math.round(tileSize * layout.tileGapRatio);
+    const boardH = cols * (tileSize + gap) + layout.boardPad * 2;
+    return boardH + 40; // room for extras under board
+  }, [tileSize]);
+
   const finish = async () => {
     await completeOnboarding();
     navigation.replace('MainMenu');
@@ -198,21 +214,25 @@ export function OnboardingScreen({ navigation }: Props) {
       });
       return (
         <View style={[styles.page, { width: pageW }]}>
-          <View style={styles.slotLabel}>
-            <Text style={styles.eyebrow}>{item.eyebrow}</Text>
+          <View style={styles.copyBlock}>
+            <View style={styles.slotLabel}>
+              <Text style={styles.eyebrow}>{item.eyebrow}</Text>
+            </View>
+            <View style={styles.slotTitle}>
+              <Text style={styles.title}>{item.title}</Text>
+            </View>
+            <View style={styles.slotBody}>
+              <Text style={styles.body}>{item.body}</Text>
+            </View>
           </View>
-          <View style={styles.slotTitle}>
-            <Text style={styles.title}>{item.title}</Text>
-          </View>
-          <View style={styles.slotBody}>
-            <Text style={styles.body}>{item.body}</Text>
-          </View>
-          <View style={styles.slotIllustration}>
+
+          <View style={[styles.slotIllustration, { height: illustrationH }]}>
             <DemoBoard
               board={DEMO_BOARDS[index]}
               selected={SELECTED[index]}
               showHand={index === 0}
               parallax={parallax}
+              tileSize={tileSize}
             />
             {index === 1 ? <ClearExtras /> : null}
             {index === 2 ? <MasterExtras /> : null}
@@ -220,7 +240,7 @@ export function OnboardingScreen({ navigation }: Props) {
         </View>
       );
     },
-    [scrollX, pageW],
+    [scrollX, pageW, tileSize, illustrationH],
   );
 
   return (
@@ -273,7 +293,10 @@ const styles = StyleSheet.create({
   pager: { flex: 1 },
   page: {
     paddingHorizontal: layout.screenPad,
-    paddingTop: 24,
+    paddingTop: layout.onboardingTopPad,
+    flex: 1,
+  },
+  copyBlock: {
     alignItems: 'center',
   },
   slotLabel: {
@@ -289,11 +312,10 @@ const styles = StyleSheet.create({
   slotBody: {
     height: 52,
     justifyContent: 'flex-start',
-    marginBottom: 16,
     paddingHorizontal: 8,
   },
   slotIllustration: {
-    height: layout.onboardingIllustrationH,
+    flexGrow: 1,
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
@@ -340,7 +362,7 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingHorizontal: layout.screenPad,
-    paddingBottom: 18,
+    paddingBottom: 16,
     gap: 14,
   },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 2 },

@@ -51,6 +51,7 @@ export function BoardView({
   );
 
   const cellPitch = tileSize + gap;
+  const dense = cols >= 12;
 
   return (
     <View style={styles.outer}>
@@ -75,6 +76,7 @@ export function BoardView({
                   colorId={cell}
                   size={tileSize}
                   gap={gap}
+                  dense={dense}
                   selected={isSelected}
                   showLetter={showLetters}
                   onPress={() => onTilePress({ col, row })}

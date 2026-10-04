@@ -3,8 +3,13 @@ export const colors = {
   /** Flat fallback; prefer ScreenBackground gradient */
   bg: '#0A0E18',
   bgGradient: ['#0A0F1C', '#0B1220', '#0A0E18'] as const,
+  /** Solid hues for SVG RadialGradient stops (opacity applied in stops) */
+  glowBlueHex: '#2D78F0',
+  glowMagentaHex: '#E218C0',
+  glowCyanHex: '#5BC4E8',
   glowBlue: 'rgba(45, 120, 240, 0.14)',
   glowMagenta: 'rgba(226, 24, 192, 0.12)',
+  glowCyan: 'rgba(91, 196, 232, 0.12)',
   /** Board panel / secondary button fill */
   surface: '#111B2E',
   surfaceElevated: '#182338',

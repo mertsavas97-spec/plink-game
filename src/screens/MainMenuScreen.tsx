@@ -42,11 +42,11 @@ export function MainMenuScreen({ navigation }: Props) {
 
   const contentStyle = useAnimatedStyle(() => ({
     opacity: enter.value,
-    transform: [{ translateY: (1 - enter.value) * 12 }],
+    transform: [{ translateY: (1 - enter.value) * 10 }],
   }));
 
   return (
-    <ScreenBackground showDecorTiles>
+    <ScreenBackground showDecorTiles showLogoGlow>
       <SafeAreaView style={styles.safe}>
         <View style={styles.topRow}>
           <View style={{ flex: 1 }} />
@@ -54,15 +54,19 @@ export function MainMenuScreen({ navigation }: Props) {
             accessibilityLabel="Settings"
             onPress={() => navigation.navigate('Settings')}
             style={styles.gear}
+            hitSlop={8}
           >
             <IconSettings />
           </Pressable>
         </View>
 
         <Animated.View style={[styles.body, contentStyle]}>
+          {/* Flex spacers 1 : 2 above / below logo */}
+          <View style={styles.spacer1} />
           <View style={styles.hero}>
-            <PlinkLogo size="lg" animated showTagline />
+            <PlinkLogo size="lg" animated showTagline fillWidth />
           </View>
+          <View style={styles.spacer2} />
 
           <View style={styles.actions}>
             <AppButton
@@ -114,6 +118,8 @@ const styles = StyleSheet.create({
   gear: {
     width: layout.iconBtn,
     height: layout.iconBtn,
+    minWidth: layout.iconBtn,
+    minHeight: layout.iconBtn,
     borderRadius: layout.buttonRadius,
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -121,16 +127,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  body: { flex: 1, paddingBottom: 12, zIndex: 1 },
+  body: { flex: 1, paddingBottom: 16, zIndex: 1 },
+  spacer1: { flex: 1, minHeight: 8 },
+  spacer2: { flex: 2, minHeight: 12 },
   hero: {
-    flexGrow: 0,
-    paddingTop: 32,
-    paddingBottom: 24,
     alignItems: 'center',
-    minHeight: 176,
     justifyContent: 'center',
   },
-  actions: { gap: 10, marginBottom: 16 },
+  actions: { gap: layout.listButtonGap },
   footerBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -138,7 +142,7 @@ const styles = StyleSheet.create({
     gap: 14,
     paddingVertical: 14,
     paddingHorizontal: 16,
-    marginTop: 'auto',
+    marginTop: layout.highScoreGap,
   },
   highLabel: {
     ...typeScale.label,

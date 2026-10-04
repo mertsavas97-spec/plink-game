@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -9,55 +10,115 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { colors, type TileColorId } from '../theme/colors';
+import { layout } from '../theme/layout';
 import { Tile } from './Tile';
 
 type DecorSpec = {
   id: TileColorId;
-  top: number;
-  left?: number;
-  right?: number;
+  /** Absolute px from top-left of screen */
+  x: number;
+  y: number;
   size: number;
   rotate: number;
   opacity: number;
   drift: number;
   duration: number;
+  /** Soft blur feel via slight scale-down for “far” tiles */
+  far: boolean;
 };
 
-/** Seeded pseudo-random in [0,1). */
 function seeded(n: number) {
   const x = Math.sin(n * 12.9898 + 78.233) * 43758.5453;
   return x - Math.floor(x);
 }
 
-function buildDecor(seed = 42): DecorSpec[] {
-  const letters: TileColorId[] = ['A', 'B', 'C', 'D', 'E', 'A', 'C'];
+/**
+ * Fixed seeded composition: 7 tiles, 56–96px, ~60–70% visible,
+ * clear center content band.
+ */
+function buildDecor(screenW: number, screenH: number, seed = 11): DecorSpec[] {
+  const letters: TileColorId[] = ['A', 'C', 'E', 'B', 'D', 'A', 'C'];
+  // Anchor slots near edges so center stays clear (menu logo/buttons)
+  const slots: Array<{ xRatio: number; yRatio: number }> = [
+    { xRatio: -0.08, yRatio: 0.1 },
+    { xRatio: 0.78, yRatio: 0.08 },
+    { xRatio: -0.1, yRatio: 0.42 },
+    { xRatio: 0.82, yRatio: 0.38 },
+    { xRatio: -0.06, yRatio: 0.72 },
+    { xRatio: 0.76, yRatio: 0.68 },
+    { xRatio: 0.86, yRatio: 0.88 },
+  ];
+
   return letters.map((id, i) => {
     const r = seeded(seed + i * 17);
     const r2 = seeded(seed + i * 31 + 3);
     const r3 = seeded(seed + i * 53 + 7);
-    const leftSide = i % 2 === 0;
+    const size =
+      layout.decorTileMin +
+      Math.round(r * (layout.decorTileMax - layout.decorTileMin));
+    const slot = slots[i];
+    const x = slot.xRatio * screenW + (r2 - 0.5) * 12;
+    const y = slot.yRatio * screenH + (r3 - 0.5) * 16;
     return {
       id,
-      top: 6 + r * 78,
-      left: leftSide ? -12 + r2 * 8 : undefined,
-      right: leftSide ? undefined : -12 + r2 * 8,
-      size: 28 + Math.round(r3 * 22),
-      rotate: -35 + r * 70,
-      opacity: 0.1 + r2 * 0.15,
-      drift: 4 + r3 * 2,
-      duration: 4000 + r * 3000,
+      x,
+      y,
+      size,
+      rotate: -30 + r * 60,
+      opacity:
+        layout.decorOpacityMin +
+        r2 * (layout.decorOpacityMax - layout.decorOpacityMin),
+      drift: 4 + r3 * 3,
+      duration: 4500 + r * 2500,
+      far: size < 70 || r3 > 0.55,
     };
   });
 }
 
-function DriftGlow({
+function SoftGlow({
+  cx,
+  cy,
+  radius,
   color,
-  style,
+  opacity = layout.glowCenterOpacity,
+}: {
+  cx: number;
+  cy: number;
+  radius: number;
+  color: string;
+  opacity?: number;
+}) {
+  const id = `glow-${color.replace('#', '')}-${Math.round(cx)}-${Math.round(cy)}`;
+  const size = radius * 2;
+  return (
+    <Svg
+      width={size}
+      height={size}
+      style={{
+        position: 'absolute',
+        left: cx - radius,
+        top: cy - radius,
+      }}
+      pointerEvents="none"
+    >
+      <Defs>
+        <RadialGradient id={id} cx="50%" cy="50%" rx="50%" ry="50%">
+          <Stop offset="0%" stopColor={color} stopOpacity={opacity} />
+          <Stop offset="55%" stopColor={color} stopOpacity={opacity * 0.35} />
+          <Stop offset="100%" stopColor={color} stopOpacity={0} />
+        </RadialGradient>
+      </Defs>
+      <Rect x={0} y={0} width={size} height={size} fill={`url(#${id})`} />
+    </Svg>
+  );
+}
+
+function DriftLayer({
+  children,
   dx,
   dy,
 }: {
-  color: string;
-  style: object;
+  children: React.ReactNode;
   dx: number;
   dy: number;
 }) {
@@ -75,7 +136,7 @@ function DriftGlow({
       { translateY: t.value * dy },
     ],
   }));
-  return <Animated.View style={[styles.glow, style, { backgroundColor: color }, anim]} />;
+  return <Animated.View style={[StyleSheet.absoluteFill, anim]}>{children}</Animated.View>;
 }
 
 function FloatingTile({ spec }: { spec: DecorSpec }) {
@@ -92,23 +153,23 @@ function FloatingTile({ spec }: { spec: DecorSpec }) {
   }, [y, spec.drift, spec.duration]);
 
   const anim = useAnimatedStyle(() => ({
-    transform: [{ translateY: y.value - spec.drift / 2 }, { rotate: `${spec.rotate}deg` }],
-    opacity: spec.opacity,
+    transform: [
+      { translateY: y.value - spec.drift / 2 },
+      { rotate: `${spec.rotate}deg` },
+      { scale: spec.far ? 0.92 : 1 },
+    ],
+    opacity: spec.far ? spec.opacity * 0.85 : spec.opacity,
   }));
 
   return (
     <Animated.View
       style={[
         styles.decorItem,
-        {
-          top: `${spec.top}%`,
-          left: spec.left != null ? `${spec.left}%` : undefined,
-          right: spec.right != null ? `${spec.right}%` : undefined,
-        },
+        { left: spec.x, top: spec.y, width: spec.size, height: spec.size },
         anim,
       ]}
     >
-      <Tile colorId={spec.id} size={spec.size} showLetter gap={0} />
+      <Tile colorId={spec.id} size={spec.size} showLetter gap={0} glow />
     </Animated.View>
   );
 }
@@ -116,12 +177,24 @@ function FloatingTile({ spec }: { spec: DecorSpec }) {
 interface Props {
   /** Decorative floating tiles (menu / onboarding / results). */
   showDecorTiles?: boolean;
+  /** Faint cyan glow behind logo area (main menu). */
+  showLogoGlow?: boolean;
   children?: React.ReactNode;
 }
 
-/** Shared atmospheric background — gradient + glows (+ optional decor tiles). */
-export function ScreenBackground({ showDecorTiles = false, children }: Props) {
-  const decor = useMemo(() => (showDecorTiles ? buildDecor(7) : []), [showDecorTiles]);
+/** Shared atmospheric background — gradient + soft SVG glows (+ optional decor). */
+export function ScreenBackground({
+  showDecorTiles = false,
+  showLogoGlow = false,
+  children,
+}: Props) {
+  const { width: screenW, height: screenH } = useWindowDimensions();
+  const decor = useMemo(
+    () => (showDecorTiles ? buildDecor(screenW, screenH) : []),
+    [showDecorTiles, screenW, screenH],
+  );
+
+  const glowR = screenW * 0.7;
 
   return (
     <View style={styles.root}>
@@ -132,10 +205,37 @@ export function ScreenBackground({ showDecorTiles = false, children }: Props) {
         end={{ x: 0.5, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
-      <DriftGlow color={colors.glowBlue} style={styles.glowBlue} dx={28} dy={-18} />
-      <DriftGlow color={colors.glowMagenta} style={styles.glowMagenta} dx={-22} dy={24} />
+
+      <DriftLayer dx={22} dy={-14}>
+        <SoftGlow
+          cx={screenW * 0.08}
+          cy={screenH * 0.12}
+          radius={glowR}
+          color={colors.glowBlueHex}
+          opacity={0.14}
+        />
+      </DriftLayer>
+      <DriftLayer dx={-18} dy={20}>
+        <SoftGlow
+          cx={screenW * 0.92}
+          cy={screenH * 0.82}
+          radius={glowR * 0.95}
+          color={colors.glowMagentaHex}
+          opacity={0.12}
+        />
+      </DriftLayer>
+      {showLogoGlow ? (
+        <SoftGlow
+          cx={screenW * 0.5}
+          cy={screenH * 0.22}
+          radius={screenW * 0.55}
+          color={colors.glowCyanHex}
+          opacity={0.1}
+        />
+      ) : null}
+
       {showDecorTiles ? (
-        <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+        <View pointerEvents="none" style={styles.decorLayer}>
           {decor.map((d, i) => (
             <FloatingTile key={`${d.id}-${i}`} spec={d} />
           ))}
@@ -147,21 +247,11 @@ export function ScreenBackground({ showDecorTiles = false, children }: Props) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
-  content: { flex: 1, zIndex: 1 },
-  glow: {
-    position: 'absolute',
-    width: 320,
-    height: 320,
-    borderRadius: 160,
-  },
-  glowBlue: {
-    top: -40,
-    left: -80,
-  },
-  glowMagenta: {
-    bottom: 40,
-    right: -100,
+  root: { flex: 1, backgroundColor: colors.bg, overflow: 'hidden' },
+  content: { flex: 1, zIndex: 2 },
+  decorLayer: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 1,
   },
   decorItem: {
     position: 'absolute',

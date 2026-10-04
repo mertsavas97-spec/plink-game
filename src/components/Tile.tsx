@@ -22,9 +22,11 @@ interface Props {
   onPress?: () => void;
   /** Optional letter override (logo uses P–K). */
   letter?: string;
-  /** Soft colored glow behind tile (logo). */
+  /** Soft colored glow behind tile (logo / decor). */
   glow?: boolean;
   gap?: number;
+  /** Dense boards (12+ cols): slightly smaller letters for breathing room. */
+  dense?: boolean;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -38,10 +40,16 @@ function TileInner({
   letter,
   glow = false,
   gap,
+  dense = false,
 }: Props) {
-  const radius = Math.max(6, Math.round(size * layout.tileRadiusRatio));
-  const letterSize = Math.max(12, Math.round(size * layout.letterScale));
-  const bevelH = Math.max(3, Math.round(size * layout.tileBevelRatio));
+  const radius = Math.max(5, Math.round(size * layout.tileRadiusRatio));
+  const scaleRatio = dense ? layout.letterScaleDense : layout.letterScale;
+  const letterSize = Math.max(10, Math.round(size * scaleRatio));
+  const bevelH = Math.max(
+    layout.tileBevelMin,
+    Math.round(size * layout.tileBevelRatio),
+  );
+  const highlightH = Math.max(4, Math.round(size * layout.tileHighlightHeightRatio));
   const resolvedGap =
     gap ?? Math.max(2, Math.round(size * layout.tileGapRatio));
   const halfGap = resolvedGap / 2;
@@ -103,8 +111,8 @@ function TileInner({
           margin: halfGap,
           borderRadius: radius,
           shadowColor: base,
-          shadowOpacity: glow ? 0.55 : layout.tileShadowOpacity,
-          shadowRadius: glow ? 12 : layout.tileShadowRadius,
+          shadowOpacity: glow ? 0.5 : layout.tileShadowOpacity,
+          shadowRadius: glow ? 14 : layout.tileShadowRadius,
           shadowOffset: { width: 0, height: layout.tileShadowOffsetY },
           elevation: glow ? 8 : layout.tileElevation,
           zIndex: selected ? 3 : 1,
@@ -140,7 +148,6 @@ function TileInner({
           },
         ]}
       >
-        {/* Soft glossy ellipse/strip — upper 40% */}
         <LinearGradient
           colors={[
             `rgba(255,255,255,${layout.tileHighlightOpacity})`,
@@ -153,25 +160,21 @@ function TileInner({
           style={[
             styles.highlight,
             {
-              height: size * layout.tileHighlightHeightRatio,
+              height: highlightH,
               borderTopLeftRadius: radius,
               borderTopRightRadius: radius,
-              left: size * 0.08,
-              right: size * 0.08,
+              left: Math.max(2, size * 0.08),
+              right: Math.max(2, size * 0.08),
             },
           ]}
         />
-        {/* 1px inner light edge */}
         <View
           pointerEvents="none"
           style={[
             styles.innerEdge,
-            {
-              borderRadius: Math.max(4, radius - 1),
-            },
+            { borderRadius: Math.max(3, radius - 1) },
           ]}
         />
-        {/* Bottom bevel ~8% */}
         <LinearGradient
           colors={['transparent', dark]}
           start={{ x: 0.5, y: 0 }}
@@ -243,7 +246,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    opacity: 0.9,
+    opacity: 0.92,
   },
   letter: {
     fontFamily: fonts.tileLetter,
