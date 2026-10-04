@@ -41,10 +41,11 @@ function buildSlots(
   if (preset === 'menu') {
     // Logo ~y 0.18–0.38, tagline ~0.40, Play ~0.52, Themes/Daily ~0.62–0.78
     return [
-      { x0: -8, y0: 8, x1: 40, y1: h * 0.14, id: 'A', size: 64, rotate: -22, dim: 0.28 },
-      { x0: w - 56, y0: 12, x1: w - 8, y1: h * 0.14, id: 'C', size: 56, rotate: 18, dim: 0.3 },
-      { x0: -10, y0: h * 0.42, x1: 36, y1: h * 0.5, id: 'E', size: 60, rotate: -12, dim: 0.26 },
-      { x0: w - 52, y0: h * 0.42, x1: w - 4, y1: h * 0.5, id: 'B', size: 52, rotate: 14, dim: 0.28 },
+      { x0: -8, y0: 8, x1: 40, y1: h * 0.12, id: 'A', size: 58, rotate: -22, dim: 0.28 },
+      // Keep clear of top-right Settings gear (~44px)
+      { x0: w - 96, y0: 56, x1: w - 48, y1: h * 0.14, id: 'C', size: 48, rotate: 18, dim: 0.3 },
+      { x0: -10, y0: h * 0.42, x1: 36, y1: h * 0.48, id: 'E', size: 56, rotate: -12, dim: 0.26 },
+      { x0: w - 52, y0: h * 0.42, x1: w - 8, y1: h * 0.48, id: 'B', size: 48, rotate: 14, dim: 0.28 },
     ];
   }
   if (preset === 'onboarding') {

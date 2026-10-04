@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, paddingHorizontal: layout.screenPad },
   list: { gap: 14, paddingBottom: 24, paddingTop: 4 },
   card: { gap: 12, paddingVertical: 18 },
-  dimmed: { opacity: 0.55 },
+  dimmed: { opacity: 0.48 },
   previewRow: {
     flexDirection: 'row',
     justifyContent: 'center',
