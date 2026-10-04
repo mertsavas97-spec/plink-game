@@ -1,8 +1,8 @@
 /** Shared layout / component size tokens — 8pt grid. */
 export const layout = {
   screenPad: 20,
-  /** Board horizontal screen margin */
-  boardScreenMargin: 8,
+  /** Board / dock horizontal screen margin (matched) */
+  boardScreenMargin: 16,
   contentInset: 16,
   sectionGap: 16,
   /** Hard minimum playable tile edge (pt) */

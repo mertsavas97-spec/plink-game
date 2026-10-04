@@ -32,30 +32,29 @@ const SILHOUETTES: Array<{
   rotate: number;
   opacity: number;
 }> = [
-  { id: 'A', x: -0.08, y: 0.02, size: 170, rotate: -18, opacity: 0.07 },
-  { id: 'C', x: 0.78, y: 0.04, size: 150, rotate: 14, opacity: 0.08 },
-  { id: 'D', x: -0.12, y: 0.78, size: 190, rotate: 12, opacity: 0.06 },
-  { id: 'B', x: 0.82, y: 0.74, size: 160, rotate: -22, opacity: 0.08 },
-  { id: 'E', x: 0.05, y: 0.88, size: 130, rotate: 8, opacity: 0.07 },
-  { id: 'A', x: 0.7, y: 0.9, size: 140, rotate: -10, opacity: 0.06 },
+  { id: 'A', x: -0.08, y: 0.02, size: 170, rotate: -18, opacity: 0.11 },
+  { id: 'C', x: 0.78, y: 0.04, size: 150, rotate: 14, opacity: 0.12 },
+  { id: 'D', x: -0.12, y: 0.78, size: 190, rotate: 12, opacity: 0.1 },
+  { id: 'B', x: 0.82, y: 0.74, size: 160, rotate: -22, opacity: 0.12 },
+  { id: 'E', x: 0.05, y: 0.88, size: 130, rotate: 8, opacity: 0.11 },
+  { id: 'A', x: 0.7, y: 0.9, size: 140, rotate: -10, opacity: 0.1 },
 ];
 
+/** Kept: 3–5px motes @ 20–30% with soft glow */
 const DUST: Array<{ x: number; y: number; size: number; delay: number; dur: number }> =
   [
-    { x: 0.12, y: 0.2, size: 2, delay: 0, dur: 18000 },
-    { x: 0.28, y: 0.35, size: 3, delay: 400, dur: 22000 },
-    { x: 0.72, y: 0.18, size: 2, delay: 800, dur: 16000 },
-    { x: 0.88, y: 0.4, size: 4, delay: 200, dur: 24000 },
-    { x: 0.18, y: 0.62, size: 2, delay: 1200, dur: 20000 },
-    { x: 0.42, y: 0.78, size: 3, delay: 600, dur: 19000 },
-    { x: 0.65, y: 0.55, size: 2, delay: 1000, dur: 21000 },
-    { x: 0.9, y: 0.68, size: 3, delay: 300, dur: 17000 },
-    { x: 0.08, y: 0.48, size: 2, delay: 1500, dur: 23000 },
-    { x: 0.55, y: 0.22, size: 3, delay: 700, dur: 15000 },
-    { x: 0.33, y: 0.9, size: 2, delay: 900, dur: 25000 },
+    { x: 0.12, y: 0.2, size: 3, delay: 0, dur: 18000 },
+    { x: 0.28, y: 0.35, size: 4, delay: 400, dur: 22000 },
+    { x: 0.72, y: 0.18, size: 3, delay: 800, dur: 16000 },
+    { x: 0.88, y: 0.4, size: 5, delay: 200, dur: 24000 },
+    { x: 0.18, y: 0.62, size: 3, delay: 1200, dur: 20000 },
+    { x: 0.42, y: 0.78, size: 4, delay: 600, dur: 19000 },
+    { x: 0.65, y: 0.55, size: 3, delay: 1000, dur: 21000 },
+    { x: 0.9, y: 0.68, size: 4, delay: 300, dur: 17000 },
+    { x: 0.08, y: 0.48, size: 3, delay: 1500, dur: 23000 },
+    { x: 0.55, y: 0.22, size: 5, delay: 700, dur: 15000 },
+    { x: 0.33, y: 0.9, size: 3, delay: 900, dur: 25000 },
     { x: 0.78, y: 0.85, size: 4, delay: 1100, dur: 18000 },
-    { x: 0.5, y: 0.45, size: 2, delay: 500, dur: 20000 },
-    { x: 0.22, y: 0.08, size: 3, delay: 1300, dur: 16000 },
   ];
 
 function SoftGlow({
@@ -165,24 +164,42 @@ function DustDot({
     );
   }, [t, delay, dur, reduceMotion]);
   const style = useAnimatedStyle(() => ({
-    opacity: 0.1 + (1 - t.value) * 0.1,
+    opacity: 0.2 + (1 - t.value) * 0.1,
     transform: [{ translateY: -t.value * 28 }],
   }));
+  const glow = size + 6;
   return (
     <Animated.View
       pointerEvents="none"
       style={[
-        styles.dust,
+        styles.dustWrap,
         {
-          left: x * screenW,
-          top: y * screenH,
-          width: size,
-          height: size,
-          borderRadius: size / 2,
+          left: x * screenW - 3,
+          top: y * screenH - 3,
+          width: glow,
+          height: glow,
         },
         style,
       ]}
-    />
+    >
+      <Svg width={glow} height={glow}>
+        <Defs>
+          <RadialGradient id={`dust-${size}-${delay}`} cx="50%" cy="50%" rx="50%" ry="50%">
+            <Stop offset="0%" stopColor="#FFFFFF" stopOpacity={0.55} />
+            <Stop offset="45%" stopColor="#FFFFFF" stopOpacity={0.22} />
+            <Stop offset="100%" stopColor="#FFFFFF" stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Rect
+          x={(glow - size) / 2}
+          y={(glow - size) / 2}
+          width={size}
+          height={size}
+          rx={size / 2}
+          fill={`url(#dust-${size}-${delay})`}
+        />
+      </Svg>
+    </Animated.View>
   );
 }
 
@@ -313,8 +330,8 @@ function GameBackgroundInner({
       >
         <Defs>
           <RadialGradient id="beam" cx="50%" cy="0%" rx="40%" ry="100%">
-            <Stop offset="0%" stopColor="#FFFFFF" stopOpacity={0.07} />
-            <Stop offset="55%" stopColor="#FFFFFF" stopOpacity={0.02} />
+            <Stop offset="0%" stopColor="#FFFFFF" stopOpacity={0.09} />
+            <Stop offset="55%" stopColor="#FFFFFF" stopOpacity={0.03} />
             <Stop offset="100%" stopColor="#FFFFFF" stopOpacity={0} />
           </RadialGradient>
         </Defs>
@@ -411,8 +428,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#0A0E18', overflow: 'hidden' },
   content: { flex: 1, zIndex: 2 },
   beam: { position: 'absolute', top: 0, left: 0 },
-  dust: {
+  dustWrap: {
     position: 'absolute',
-    backgroundColor: '#FFFFFF',
   },
 });

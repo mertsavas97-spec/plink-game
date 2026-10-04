@@ -4,7 +4,7 @@
  */
 
 const layout = {
-  boardScreenMargin: 8,
+  boardScreenMargin: 16,
   boardPad: 8,
   tileGapPx: 2,
   minTile: 30,

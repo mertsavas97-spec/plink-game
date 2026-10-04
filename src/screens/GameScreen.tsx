@@ -466,6 +466,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: layout.boardScreenMargin,
+    overflow: 'hidden',
   },
   unit: {
     alignItems: 'center',
@@ -476,11 +477,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
-    paddingHorizontal: 4,
-    minHeight: layout.pauseBtnSize,
+    height: layout.pauseBtnSize,
   },
-  sideSlot: { width: layout.pauseBtnSize },
-  scoreCenter: { alignItems: 'center', flex: 1 },
+  sideSlot: { width: layout.pauseBtnSize, height: layout.pauseBtnSize },
+  scoreCenter: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+    height: layout.pauseBtnSize,
+  },
   scoreLabel: {
     fontFamily: fonts.semibold,
     fontSize: 11,
@@ -514,7 +519,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    paddingHorizontal: layout.dockSideMargin,
+    /** Match tray side inset (16) so dock width == tray width */
+    paddingHorizontal: layout.boardScreenMargin,
     zIndex: 5,
   },
   dockBorder: {

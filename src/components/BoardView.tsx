@@ -12,6 +12,7 @@ import Svg, {
   Defs,
   LinearGradient as SvgGrad,
   Pattern,
+  RadialGradient,
   Rect,
   Stop,
 } from 'react-native-svg';
@@ -20,6 +21,42 @@ import { computeBoardLayout } from '../theme/boardLayout';
 import { colors } from '../theme/colors';
 import { layout } from '../theme/layout';
 import { Tile } from './Tile';
+
+/** Soft radial tray halo — fades to 0, no hard rect edge (~10% peak). */
+function TrayHalo({
+  panelW,
+  panelH,
+}: {
+  panelW: number;
+  panelH: number;
+}) {
+  const pad = 48;
+  const w = panelW + pad * 2;
+  const h = panelH + pad * 2;
+  return (
+    <Svg
+      pointerEvents="none"
+      width={w}
+      height={h}
+      style={[styles.haloSvg, { left: -pad, top: -pad }]}
+    >
+      <Defs>
+        <RadialGradient id="haloBlue" cx="28%" cy="22%" rx="55%" ry="48%">
+          <Stop offset="0%" stopColor={colors.glowBlueHex} stopOpacity={0.1} />
+          <Stop offset="55%" stopColor={colors.glowBlueHex} stopOpacity={0.04} />
+          <Stop offset="100%" stopColor={colors.glowBlueHex} stopOpacity={0} />
+        </RadialGradient>
+        <RadialGradient id="haloMagenta" cx="78%" cy="82%" rx="58%" ry="52%">
+          <Stop offset="0%" stopColor={colors.glowMagentaHex} stopOpacity={0.1} />
+          <Stop offset="55%" stopColor={colors.glowMagentaHex} stopOpacity={0.035} />
+          <Stop offset="100%" stopColor={colors.glowMagentaHex} stopOpacity={0} />
+        </RadialGradient>
+      </Defs>
+      <Rect x={0} y={0} width={w} height={h} fill="url(#haloBlue)" />
+      <Rect x={0} y={0} width={w} height={h} fill="url(#haloMagenta)" />
+    </Svg>
+  );
+}
 
 interface Props {
   board: Board;
@@ -190,29 +227,18 @@ export function BoardView({
 
   return (
     <View style={styles.outer}>
-      {/* Soft outer glow — blue TL / magenta BR */}
-      <View
-        pointerEvents="none"
-        style={[
-          styles.glowBlue,
-          { width: panelWidth + 24, height: panelHeight + 24, borderRadius: radius + 8 },
-        ]}
-      />
-      <View
-        pointerEvents="none"
-        style={[
-          styles.glowMagenta,
-          { width: panelWidth + 24, height: panelHeight + 24, borderRadius: radius + 8 },
-        ]}
-      />
+      {/* Soft radial halos — no hard rect edges; playfield clips to screen */}
+      <View style={styles.haloHost} pointerEvents="none">
+        <TrayHalo panelW={panelWidth} panelH={panelHeight} />
+      </View>
 
-      {/* Shadow plate */}
+      {/* Shadow plate — full content width to match dock */}
       <View
         style={[
           styles.shadow,
           {
-            width: panelWidth,
-            height: panelHeight,
+            width: '100%',
+            maxWidth: '100%',
             borderRadius: radius,
           },
         ]}
@@ -236,15 +262,14 @@ export function BoardView({
             style={[
               styles.tray,
               {
-                width: panelWidth - 2,
-                height: panelHeight - 2,
                 borderRadius: radius - 1,
                 backgroundColor: '#0B1528',
+                minHeight: panelHeight - 2,
               },
             ]}
           >
             <View
-              style={{ flex: 1, padding: pad }}
+              style={{ padding: pad, alignItems: 'center' }}
               onStartShouldSetResponder={() => true}
               onResponderRelease={onTouch}
             >
@@ -310,36 +335,23 @@ export function BoardView({
 
 const styles = StyleSheet.create({
   outer: {
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'visible',
   },
-  glowBlue: {
-    position: 'absolute',
-    backgroundColor: 'rgba(45, 120, 240, 0.10)',
-    ...Platform.select({
-      ios: {
-        shadowColor: colors.glowBlueHex,
-        shadowOpacity: 0.55,
-        shadowRadius: 28,
-        shadowOffset: { width: -6, height: -6 },
-      },
-      default: {},
-    }),
+  haloHost: {
+    ...StyleSheet.absoluteFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 0,
+    overflow: 'visible',
   },
-  glowMagenta: {
+  haloSvg: {
     position: 'absolute',
-    backgroundColor: 'rgba(226, 24, 192, 0.08)',
-    ...Platform.select({
-      ios: {
-        shadowColor: colors.glowMagentaHex,
-        shadowOpacity: 0.5,
-        shadowRadius: 28,
-        shadowOffset: { width: 6, height: 8 },
-      },
-      default: {},
-    }),
   },
   shadow: {
+    zIndex: 1,
     backgroundColor: 'transparent',
     ...Platform.select({
       ios: {

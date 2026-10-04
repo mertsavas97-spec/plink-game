@@ -33,7 +33,7 @@ export interface BoardLayoutResult {
  *   (screenW - 2*margin - 2*pad - (cols-1)*gap) / cols,
  *   (availH - 2*pad - (rows-1)*gap) / rows
  * ))
- * margin 8, pad 6, gap 2px. MIN_TILE = 30.
+ * margin 16, pad 8, gap 2px. MIN_TILE = 30.
  */
 export function computeBoardLayout(input: BoardLayoutInput): BoardLayoutResult {
   const {
