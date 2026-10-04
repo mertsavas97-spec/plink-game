@@ -274,6 +274,8 @@ export function GameScreen({ navigation, route }: Props) {
   const canUndo = engine.canUndo();
   const canRedo = engine.canRedo();
   const hintReady = hasValidMoves(snap.board);
+  /** Shared content width — tray and dock match (16px side margins). */
+  const contentW = screenW - layout.boardScreenMargin * 2;
 
   return (
     <GameBackground
@@ -288,7 +290,7 @@ export function GameScreen({ navigation, route }: Props) {
             { paddingBottom: layout.dockHeight + insets.bottom + 12 },
           ]}
         >
-          <View style={styles.unit}>
+          <View style={[styles.unit, { width: contentW }]}>
             <View style={styles.hud}>
               <View style={styles.sideSlot} />
               <View style={styles.scoreCenter}>
@@ -323,11 +325,15 @@ export function GameScreen({ navigation, route }: Props) {
           </View>
         </View>
 
-        {/* Glass bottom dock */}
+        {/* Glass bottom dock — same width as tray */}
         <View
           style={[
             styles.dockWrap,
-            { paddingBottom: Math.max(insets.bottom, 10) },
+            {
+              width: contentW,
+              left: layout.boardScreenMargin,
+              paddingBottom: Math.max(insets.bottom, 10),
+            },
           ]}
         >
           <LinearGradient
@@ -465,26 +471,26 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: layout.boardScreenMargin,
     overflow: 'hidden',
   },
   unit: {
     alignItems: 'center',
-    width: '100%',
   },
   hud: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
+    minHeight: layout.pauseBtnSize,
+  },
+  sideSlot: {
+    width: layout.pauseBtnSize,
     height: layout.pauseBtnSize,
   },
-  sideSlot: { width: layout.pauseBtnSize, height: layout.pauseBtnSize },
   scoreCenter: {
     alignItems: 'center',
     justifyContent: 'center',
     flex: 1,
-    height: layout.pauseBtnSize,
   },
   scoreLabel: {
     fontFamily: fonts.semibold,
@@ -507,6 +513,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.14)',
+    alignSelf: 'center',
   },
   pauseFill: {
     flex: 1,
@@ -516,11 +523,7 @@ const styles = StyleSheet.create({
   },
   dockWrap: {
     position: 'absolute',
-    left: 0,
-    right: 0,
     bottom: 0,
-    /** Match tray side inset (16) so dock width == tray width */
-    paddingHorizontal: layout.boardScreenMargin,
     zIndex: 5,
   },
   dockBorder: {
