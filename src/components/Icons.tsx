@@ -110,3 +110,23 @@ export function IconTimer({ size = 22, color = colors.text }: Props) {
 export function IconGrid({ size = 22, color = colors.text }: Props) {
   return <Ionicons name="grid-outline" size={size} color={color} />;
 }
+
+export function IconVolume({ size = 20, color = colors.textMuted }: Props) {
+  return <Ionicons name="volume-medium-outline" size={size} color={color} />;
+}
+
+export function IconVibrate({ size = 20, color = colors.textMuted }: Props) {
+  return <Ionicons name="phone-portrait-outline" size={size} color={color} />;
+}
+
+export function IconLanguage({ size = 20, color = colors.textMuted }: Props) {
+  return <Ionicons name="language-outline" size={size} color={color} />;
+}
+
+export function IconUndoLimit({ size = 20, color = colors.textMuted }: Props) {
+  return <Ionicons name="arrow-undo-outline" size={size} color={color} />;
+}
+
+export function IconLetters({ size = 20, color = colors.textMuted }: Props) {
+  return <Ionicons name="text-outline" size={size} color={color} />;
+}

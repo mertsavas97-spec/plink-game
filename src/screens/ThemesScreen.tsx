@@ -1,5 +1,11 @@
-import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useMemo, useRef, useState } from 'react';
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Card } from '../components/Card';
@@ -19,60 +25,121 @@ const THEMES: Array<{
   id: string;
   name: string;
   locked: boolean;
+  description: string;
   preview: TileColorId[];
 }> = [
-  { id: 'classic', name: 'Classic', locked: false, preview: ['A', 'B', 'C', 'D', 'E'] },
-  { id: 'ocean', name: 'Ocean', locked: true, preview: ['A', 'E', 'A', 'E', 'A'] },
-  { id: 'forest', name: 'Forest', locked: true, preview: ['D', 'A', 'E', 'D', 'A'] },
+  {
+    id: 'classic',
+    name: 'Classic',
+    locked: false,
+    description: 'The original five-color palette.',
+    preview: ['A', 'B', 'C', 'D', 'E'],
+  },
+  {
+    id: 'ocean',
+    name: 'Ocean',
+    locked: true,
+    description: 'Cool blues and seafoam tones.',
+    preview: ['A', 'E', 'A', 'E', 'A'],
+  },
+  {
+    id: 'forest',
+    name: 'Forest',
+    locked: true,
+    description: 'Earthy greens and amber accents.',
+    preview: ['D', 'A', 'E', 'D', 'A'],
+  },
 ];
 
 export function ThemesScreen({ navigation }: Props) {
   const [tab, setTab] = useState(0);
   const [active, setActive] = useState('classic');
-  const theme = THEMES[tab] ?? THEMES[0];
+  const scrollRef = useRef<ScrollView>(null);
+  const cardY = useRef<number[]>([0, 0, 0]);
+
+  const visible = useMemo(() => {
+    // Tab 0 = All (show every card); 1–3 filter to matching theme
+    if (tab === 0) return THEMES;
+    const idx = tab - 1;
+    return THEMES[idx] ? [THEMES[idx]] : THEMES;
+  }, [tab]);
+
+  const onTabChange = (next: number) => {
+    setTab(next);
+    if (next === 0) {
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+      return;
+    }
+    const idx = next - 1;
+    requestAnimationFrame(() => {
+      const y = cardY.current[idx] ?? 0;
+      scrollRef.current?.scrollTo({ y: Math.max(0, y - 8), animated: true });
+    });
+  };
 
   return (
     <ScreenBackground>
       <SafeAreaView style={styles.safe}>
         <Header title="Themes" onBack={() => navigation.goBack()} />
         <Tabs
-          tabs={['Classic', 'Ocean', 'Forest']}
+          tabs={['All', 'Classic', 'Ocean', 'Forest']}
           active={tab}
-          onChange={setTab}
+          onChange={onTabChange}
         />
 
-        <Pressable
-          disabled={theme.locked}
-          onPress={() => {
-            if (!theme.locked) setActive(theme.id);
-          }}
+        <ScrollView
+          ref={scrollRef}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
         >
-          <Card style={[styles.card, theme.locked && styles.lockedCard]}>
-            <View style={styles.previewRow}>
-              {theme.preview.map((id, i) => (
-                <Tile key={`${theme.id}-${i}`} colorId={id} size={40} showLetter gap={4} />
-              ))}
-            </View>
-            <View style={styles.meta}>
-              <Text style={styles.name}>{theme.name}</Text>
-              {theme.locked ? (
-                <View style={styles.lockChip}>
-                  <IconLock size={16} />
-                  <Text style={styles.lockText}>Locked</Text>
-                </View>
-              ) : active === theme.id ? (
-                <IconCheck size={22} />
-              ) : (
-                <Text style={styles.select}>Select</Text>
-              )}
-            </View>
-            {!theme.locked ? (
-              <Text style={styles.hint}>Active palette for classic play.</Text>
-            ) : (
-              <Text style={styles.hint}>Preview only — unlock later.</Text>
-            )}
-          </Card>
-        </Pressable>
+          {(tab === 0 ? THEMES : visible).map((theme, i) => {
+            const fullIdx = THEMES.findIndex((t) => t.id === theme.id);
+            const dimmed = theme.locked;
+            return (
+              <Pressable
+                key={theme.id}
+                disabled={theme.locked}
+                onPress={() => {
+                  if (!theme.locked) setActive(theme.id);
+                }}
+                onLayout={(e) => {
+                  if (tab === 0) {
+                    cardY.current[fullIdx] = e.nativeEvent.layout.y;
+                  }
+                }}
+                style={dimmed ? styles.dimmed : undefined}
+              >
+                <Card style={styles.card}>
+                  <View style={styles.previewRow}>
+                    {theme.preview.map((id, pi) => (
+                      <Tile
+                        key={`${theme.id}-${pi}`}
+                        colorId={id}
+                        size={40}
+                        showLetter
+                        gap={4}
+                      />
+                    ))}
+                  </View>
+                  <View style={styles.meta}>
+                    <Text style={styles.name}>{theme.name}</Text>
+                    {theme.locked ? (
+                      <View style={styles.lockChip}>
+                        <IconLock size={16} />
+                        <Text style={styles.lockText}>Locked</Text>
+                      </View>
+                    ) : active === theme.id ? (
+                      <IconCheck size={22} />
+                    ) : (
+                      <Text style={styles.select}>Select</Text>
+                    )}
+                  </View>
+                  <Text style={styles.hint}>{theme.description}</Text>
+                </Card>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
       </SafeAreaView>
     </ScreenBackground>
   );
@@ -80,8 +147,9 @@ export function ThemesScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, paddingHorizontal: layout.screenPad },
-  card: { gap: 14, paddingVertical: 20 },
-  lockedCard: { opacity: 1 },
+  list: { gap: 14, paddingBottom: 24, paddingTop: 4 },
+  card: { gap: 12, paddingVertical: 18 },
+  dimmed: { opacity: 0.55 },
   previewRow: {
     flexDirection: 'row',
     justifyContent: 'center',

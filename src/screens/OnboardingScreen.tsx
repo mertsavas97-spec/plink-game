@@ -88,9 +88,9 @@ function DemoBoard({
   parallax: Animated.AnimatedInterpolation<number>;
   tileSize: number;
 }) {
-  // Bottom-right of highlighted cluster tile (col 2, row 2) — not the board corner
-  const pitch = tileSize * (1 + layout.tileGapRatio);
-  const handInset = layout.boardPad + pitch + tileSize * 0.2;
+  // Bottom-right of highlighted tile (~40% overlapping the tile)
+  const pitch = tileSize + layout.tileGapPx;
+  const handInset = layout.boardPad + pitch - tileSize * 0.4;
   return (
     <Animated.View
       style={[
@@ -169,18 +169,17 @@ export function OnboardingScreen({ navigation }: Props) {
   const tileSize = useMemo(() => {
     const targetW = pageW * layout.onboardingIllustrationWidthRatio;
     const cols = layout.onboardingDemoCols;
-    const gapRatio = layout.tileGapRatio;
+    const gap = layout.tileGapPx;
     const pad = layout.boardPad * 2;
-    const inner = targetW - pad;
-    const pitch = inner / cols;
-    return Math.max(36, Math.floor(pitch / (1 + gapRatio)));
+    const inner = targetW - pad - (cols - 1) * gap;
+    return Math.max(36, Math.floor(inner / cols));
   }, [pageW]);
 
   const illustrationH = useMemo(() => {
     const cols = layout.onboardingDemoCols;
-    const gap = Math.round(tileSize * layout.tileGapRatio);
-    const boardH = cols * (tileSize + gap) + layout.boardPad * 2;
-    return boardH + 40; // room for extras under board
+    const gap = layout.tileGapPx;
+    const boardH = cols * tileSize + (cols - 1) * gap + layout.boardPad * 2;
+    return boardH + 48; // room for decor between board and dots
   }, [tileSize]);
 
   const finish = async () => {

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { BOARD_PRESETS, COLOR_COUNT_LABELS, type BoardPreset, type ColorCount } from '../engine';
+import { BOARD_PRESETS, BOARD_PRESET_ORDER, COLOR_COUNT_LABELS, type BoardPreset, type ColorCount } from '../engine';
 import { AppButton } from '../components/AppButton';
 import { Header } from '../components/Header';
 import { IconSettings } from '../components/Icons';
@@ -16,7 +16,7 @@ import { fonts, typeScale } from '../theme/typography';
 type Props = NativeStackScreenProps<RootStackParamList, 'NewGame'>;
 
 const COLOR_OPTIONS: ColorCount[] = [3, 4, 5];
-const SIZE_OPTIONS: BoardPreset[] = ['10x10', '12x14', '16x18'];
+const SIZE_OPTIONS: BoardPreset[] = BOARD_PRESET_ORDER;
 
 const DIFFICULTY_COLOR: Record<ColorCount, string> = {
   3: colors.difficulty.easy,
@@ -24,27 +24,29 @@ const DIFFICULTY_COLOR: Record<ColorCount, string> = {
   5: colors.difficulty.hard,
 } as const;
 
-/** Actual cols×rows as small dots — clearly different shapes. */
+/** Mini grid icon — centered in fixed-height box so labels share a baseline. */
 function MiniGrid({ cols, rows, active }: { cols: number; rows: number; active: boolean }) {
-  const cell = cols >= 16 ? 3 : cols >= 12 ? 3.5 : 4.5;
-  const gap = 1.2;
+  const cell = cols >= 12 ? 2.8 : cols >= 10 ? 3.4 : 4;
+  const gap = 1;
   return (
-    <View style={{ gap, alignItems: 'center' }}>
-      {Array.from({ length: rows }).map((_, r) => (
-        <View key={r} style={{ flexDirection: 'row', gap }}>
-          {Array.from({ length: cols }).map((_, c) => (
-            <View
-              key={c}
-              style={{
-                width: cell,
-                height: cell,
-                borderRadius: 1,
-                backgroundColor: active ? colors.cream : colors.borderStrong,
-              }}
-            />
-          ))}
-        </View>
-      ))}
+    <View style={styles.iconBox}>
+      <View style={{ gap, alignItems: 'center' }}>
+        {Array.from({ length: Math.min(rows, 8) }).map((_, r) => (
+          <View key={r} style={{ flexDirection: 'row', gap }}>
+            {Array.from({ length: Math.min(cols, 8) }).map((_, c) => (
+              <View
+                key={c}
+                style={{
+                  width: cell,
+                  height: cell,
+                  borderRadius: 1,
+                  backgroundColor: active ? colors.cream : colors.borderStrong,
+                }}
+              />
+            ))}
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
@@ -54,7 +56,7 @@ export function NewGameScreen({ navigation }: Props) {
   const [colorCount, setColorCount] = useState<ColorCount>(4);
   const initial = SIZE_OPTIONS.includes(settings.defaultBoardPreset)
     ? settings.defaultBoardPreset
-    : '12x14';
+    : '10x14';
   const [boardPreset, setBoardPreset] = useState<BoardPreset>(initial);
 
   return (
@@ -79,24 +81,20 @@ export function NewGameScreen({ navigation }: Props) {
         <View style={styles.colorRow}>
           {COLOR_OPTIONS.map((n) => {
             const active = n === colorCount;
-            const accent = DIFFICULTY_COLOR[n];
+            const tint = DIFFICULTY_COLOR[n];
             return (
               <Pressable
                 key={n}
                 onPress={() => setColorCount(n)}
                 style={[
                   styles.colorCircle,
-                  { borderColor: active ? accent : colors.border },
-                  active && { backgroundColor: `${accent}28` },
+                  active && { borderColor: tint, backgroundColor: colors.surfaceElevated },
                 ]}
               >
-                <Text style={[styles.colorNum, { color: accent }]}>{n}</Text>
-                <Text
-                  style={[
-                    styles.colorLabel,
-                    { color: active ? colors.text : colors.textMuted },
-                  ]}
-                >
+                <Text style={[styles.colorNum, { color: active ? tint : colors.textMuted }]}>
+                  {n}
+                </Text>
+                <Text style={[styles.colorLabel, { color: active ? colors.text : colors.textMuted }]}>
                   {COLOR_COUNT_LABELS[n]}
                 </Text>
               </Pressable>
@@ -116,6 +114,9 @@ export function NewGameScreen({ navigation }: Props) {
                 style={[styles.sizeCard, active && styles.sizeCardActive]}
               >
                 <MiniGrid cols={size.cols} rows={size.rows} active={active} />
+                <Text style={[styles.sizeName, active && styles.sizeLabelActive]}>
+                  {size.name}
+                </Text>
                 <Text style={[styles.sizeLabel, active && styles.sizeLabelActive]}>
                   {size.label}
                 </Text>
@@ -170,6 +171,7 @@ const styles = StyleSheet.create({
     borderRadius: 44,
     backgroundColor: colors.surface,
     borderWidth: 2.5,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
@@ -180,9 +182,9 @@ const styles = StyleSheet.create({
   sizeCard: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    height: 140,
+    justifyContent: 'flex-start',
+    height: layout.sizeCardH,
+    paddingTop: 10,
     paddingHorizontal: 4,
     borderRadius: layout.buttonRadius,
     backgroundColor: colors.surface,
@@ -193,14 +195,28 @@ const styles = StyleSheet.create({
     borderColor: colors.cream,
     backgroundColor: colors.surfaceElevated,
   },
-  sizeLabel: {
+  iconBox: {
+    height: layout.sizeCardIconH,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sizeName: {
     fontFamily: fonts.bold,
     color: colors.textMuted,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  sizeLabel: {
+    fontFamily: fonts.semibold,
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: '600',
     textAlign: 'center',
   },
   sizeLabelActive: { color: colors.text },
-  sizeCount: { fontFamily: fonts.regular, color: colors.textMuted, fontSize: 12 },
+  sizeCount: { fontFamily: fonts.regular, color: colors.textMuted, fontSize: 11, marginTop: 2 },
   footer: { paddingBottom: 16, paddingTop: 8 },
 });

@@ -1,3 +1,8 @@
+import {
+  BOARD_PRESETS,
+  BOARD_PRESET_ORDER,
+  type BoardPreset,
+} from '../engine/types';
 import { layout } from './layout';
 
 export interface BoardLayoutInput {
@@ -5,13 +10,11 @@ export interface BoardLayoutInput {
   screenH: number;
   cols: number;
   rows: number;
-  /** Top chrome (safe area + score bar) */
   topChrome: number;
-  /** Bottom chrome (safe area + controls) */
   bottomChrome: number;
   boardPad?: number;
-  gapRatio?: number;
   screenMargin?: number;
+  gapPx?: number;
   minTile?: number;
   maxTile?: number;
 }
@@ -21,18 +24,16 @@ export interface BoardLayoutResult {
   gap: number;
   panelWidth: number;
   panelHeight: number;
-  /** True when panel fits within screenW - 2*margin */
   fitsHorizontally: boolean;
+  meetsMinTile: boolean;
 }
 
 /**
- * Moodboard board sizing:
  * tile = floor(min(
- *   (screenW - 32 - panelPad*2) / (cols * (1 + gapRatio)),
- *   availableH / (rows * (1 + gapRatio))
+ *   (screenW - 2*margin - 2*pad - (cols-1)*gap) / cols,
+ *   (availH - 2*pad - (rows-1)*gap) / rows
  * ))
- *
- * Horizontal panel margin is always 16px each side.
+ * margin 8, pad 6, gap 2px. MIN_TILE = 30.
  */
 export function computeBoardLayout(input: BoardLayoutInput): BoardLayoutResult {
   const {
@@ -43,52 +44,100 @@ export function computeBoardLayout(input: BoardLayoutInput): BoardLayoutResult {
     topChrome,
     bottomChrome,
     boardPad = layout.boardPad,
-    gapRatio = layout.tileGapRatio,
     screenMargin = layout.boardScreenMargin,
+    gapPx = layout.tileGapPx,
     minTile = layout.minTile,
     maxTile = layout.maxTile,
   } = input;
 
   if (cols <= 0 || rows <= 0) {
-    const tileSize = layout.comfortTile;
-    const gap = Math.round(tileSize * gapRatio);
     return {
-      tileSize,
-      gap,
+      tileSize: layout.comfortTile,
+      gap: gapPx,
       panelWidth: boardPad * 2,
       panelHeight: boardPad * 2,
       fitsHorizontally: true,
+      meetsMinTile: true,
     };
   }
 
-  const availW = Math.max(0, screenW - screenMargin * 2 - boardPad * 2);
-  const availH = Math.max(
-    0,
-    screenH - topChrome - bottomChrome - boardPad * 2,
+  const availH = Math.max(0, screenH - topChrome - bottomChrome);
+  const byW = Math.floor(
+    (screenW - screenMargin * 2 - boardPad * 2 - (cols - 1) * gapPx) / cols,
   );
+  const byH = Math.floor(
+    (availH - boardPad * 2 - (rows - 1) * gapPx) / rows,
+  );
+  let tileSize = Math.max(1, Math.min(maxTile, Math.min(byW, byH)));
+  const gap = gapPx;
 
-  const pitchFactor = 1 + gapRatio;
-  const byW = Math.floor(availW / (cols * pitchFactor));
-  const byH = Math.floor(availH / (rows * pitchFactor));
-  // Prefer comfort min, but always shrink further if needed to keep 16px margins
-  let tileSize = Math.min(maxTile, Math.min(byW, byH));
-  if (tileSize >= minTile) {
-    // ok
-  } else {
-    tileSize = Math.max(16, tileSize);
-  }
-  let gap = Math.max(1, Math.round(tileSize * gapRatio));
-
-  // Ensure final panel width never exceeds screen - margins
-  const maxPanelInner = screenW - screenMargin * 2 - boardPad * 2;
-  while (cols * (tileSize + gap) > maxPanelInner && tileSize > 16) {
+  // Shrink further if panel would overflow (safety)
+  const maxInnerW = screenW - screenMargin * 2 - boardPad * 2;
+  while (cols * tileSize + (cols - 1) * gap > maxInnerW && tileSize > 1) {
     tileSize -= 1;
-    gap = Math.max(1, Math.round(tileSize * gapRatio));
   }
 
-  const panelWidth = cols * (tileSize + gap) + boardPad * 2;
-  const panelHeight = rows * (tileSize + gap) + boardPad * 2;
-  const fitsHorizontally = panelWidth <= screenW - screenMargin * 2 + 0.5;
+  const panelWidth = cols * tileSize + (cols - 1) * gap + boardPad * 2;
+  const panelHeight = rows * tileSize + (rows - 1) * gap + boardPad * 2;
 
-  return { tileSize, gap, panelWidth, panelHeight, fitsHorizontally };
+  return {
+    tileSize,
+    gap,
+    panelWidth,
+    panelHeight,
+    fitsHorizontally: panelWidth <= screenW - screenMargin * 2 + 0.5,
+    meetsMinTile: tileSize >= minTile,
+  };
+}
+
+/**
+ * If requested preset can't reach MIN_TILE, fall back to next smaller.
+ * Returns the playable preset + layout math.
+ */
+export function resolvePlayablePreset(
+  requested: BoardPreset,
+  screenW: number,
+  screenH: number,
+  topChrome: number,
+  bottomChrome: number,
+): { preset: BoardPreset; layout: BoardLayoutResult; fellBack: boolean } {
+  const startIdx = BOARD_PRESET_ORDER.indexOf(requested);
+  const order =
+    startIdx >= 0
+      ? BOARD_PRESET_ORDER.slice(0, startIdx + 1).reverse()
+      : [...BOARD_PRESET_ORDER].reverse();
+
+  let last = {
+    preset: requested,
+    layout: computeBoardLayout({
+      screenW,
+      screenH,
+      cols: BOARD_PRESETS[requested].cols,
+      rows: BOARD_PRESETS[requested].rows,
+      topChrome,
+      bottomChrome,
+    }),
+    fellBack: false,
+  };
+
+  for (const preset of order) {
+    const size = BOARD_PRESETS[preset];
+    const result = computeBoardLayout({
+      screenW,
+      screenH,
+      cols: size.cols,
+      rows: size.rows,
+      topChrome,
+      bottomChrome,
+    });
+    if (result.meetsMinTile) {
+      return {
+        preset,
+        layout: result,
+        fellBack: preset !== requested,
+      };
+    }
+    last = { preset, layout: result, fellBack: preset !== requested };
+  }
+  return last;
 }

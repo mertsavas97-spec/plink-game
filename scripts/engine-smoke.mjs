@@ -107,15 +107,17 @@ assert(g[0][0] === 'A', 'gravity packs A to bottom');
 assert(g[1][0] === 'B', 'columns collapse left');
 assert(g[2].every((c) => c == null), 'empty column on right');
 
-const seeded = createBoard(10, 10, 4, 42);
-assert(seeded.length === 10 && seeded[0].length === 10, 'seeded board size');
+const seeded = createBoard(10, 14, 4, 42);
+assert(seeded.length === 10 && seeded[0].length === 14, 'seeded board size 10×14');
 assert(seeded.every((col) => col.every((c) => 'ABCD'.includes(c))), 'palette 4');
 
-// Rectangular boards (cols × rows)
-const rect = createBoard(12, 14, 3, 7);
-assert(rect.length === 12 && rect[0].length === 14, '12×14 rectangular board');
-const wide = createBoard(16, 18, 5, 99);
-assert(wide.length === 16 && wide[0].length === 18, '16×18 rectangular board');
-assert(Math.min(360 / 12, 480 / 14) === 30, 'tile size uses min(W/cols, H/rows)');
+// Rectangular boards (cols × rows) — Small / Medium / Large
+const small = createBoard(8, 12, 3, 7);
+assert(small.length === 8 && small[0].length === 12, '8×12 rectangular board');
+const medium = createBoard(10, 14, 4, 11);
+assert(medium.length === 10 && medium[0].length === 14, '10×14 rectangular board');
+const large = createBoard(12, 16, 5, 99);
+assert(large.length === 12 && large[0].length === 16, '12×16 rectangular board');
+assert(Math.floor(Math.min(360 / 10, 480 / 14)) === 34, 'tile size uses min(W/cols, H/rows)');
 
 console.log('engine-smoke: ok');

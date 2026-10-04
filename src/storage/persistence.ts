@@ -24,7 +24,7 @@ export const DEFAULT_SETTINGS: Settings = {
   language: 'en',
   showTileLetters: true,
   undoLimit: 3,
-  defaultBoardPreset: '12x14',
+  defaultBoardPreset: '10x14',
 };
 
 export type ChallengeId =

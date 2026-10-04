@@ -51,11 +51,11 @@ function TileInner({
     Math.round(size * layout.tileBevelRatio),
   );
   const highlightH = Math.max(4, Math.round(size * layout.tileHighlightHeightRatio));
-  const resolvedGap =
-    gap ?? Math.max(2, Math.round(size * layout.tileGapRatio));
+  const resolvedGap = gap ?? layout.tileGapPx;
   const halfGap = resolvedGap / 2;
   const displayLetter = letter ?? colorId;
   const coloredGlow = glow || selected;
+  const softShadow = size < 34;
 
   const scale = useSharedValue(1);
   const pulse = useSharedValue(1);
@@ -208,6 +208,13 @@ function TileInner({
               {
                 fontSize: letterSize,
                 lineHeight: letterSize * 1.05,
+                textShadowOffset: softShadow
+                  ? { width: 0, height: 1 }
+                  : { width: 0, height: 2 },
+                textShadowRadius: softShadow ? 0 : 0,
+                textShadowColor: softShadow
+                  ? 'rgba(0,0,0,0.15)'
+                  : 'rgba(0,0,0,0.25)',
                 ...(Platform.OS === 'android' ? { includeFontPadding: false } : null),
               },
             ]}

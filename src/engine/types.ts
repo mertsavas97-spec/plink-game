@@ -2,8 +2,8 @@ import type { TileColorId } from '../theme/colors';
 
 export type ColorCount = 3 | 4 | 5;
 
-/** Board presets: cols × rows (rectangular allowed). */
-export type BoardPreset = '10x10' | '12x14' | '16x18';
+/** Board presets: cols × rows (Small / Medium / Large). */
+export type BoardPreset = '8x12' | '10x14' | '12x16';
 
 export interface BoardSize {
   rows: number;
@@ -11,6 +11,8 @@ export interface BoardSize {
   preset: BoardPreset;
   label: string;
   tileCount: number;
+  /** Display name for New Game / Settings */
+  name: string;
 }
 
 /** Cell value: color id or null when empty. */
@@ -49,30 +51,36 @@ export interface GameSnapshot {
 export type GameStatus = 'playing' | 'won' | 'lost';
 
 export const BOARD_PRESETS: Record<BoardPreset, BoardSize> = {
-  '10x10': {
-    rows: 10,
-    cols: 10,
-    preset: '10x10',
-    label: '10 × 10',
-    tileCount: 100,
+  '8x12': {
+    rows: 12,
+    cols: 8,
+    preset: '8x12',
+    label: '8 × 12',
+    name: 'Small',
+    tileCount: 96,
   },
-  '12x14': {
+  '10x14': {
     rows: 14,
-    cols: 12,
-    preset: '12x14',
-    label: '12 × 14',
-    tileCount: 168,
+    cols: 10,
+    preset: '10x14',
+    label: '10 × 14',
+    name: 'Medium',
+    tileCount: 140,
   },
-  '16x18': {
-    rows: 18,
-    cols: 16,
-    preset: '16x18',
-    label: '16 × 18',
-    tileCount: 288,
+  '12x16': {
+    rows: 16,
+    cols: 12,
+    preset: '12x16',
+    label: '12 × 16',
+    name: 'Large',
+    tileCount: 192,
   },
 };
 
-export const DEFAULT_BOARD_PRESET: BoardPreset = '12x14';
+/** Ordered smallest → largest for fallback. */
+export const BOARD_PRESET_ORDER: BoardPreset[] = ['8x12', '10x14', '12x16'];
+
+export const DEFAULT_BOARD_PRESET: BoardPreset = '10x14';
 
 export const COLOR_COUNT_LABELS: Record<ColorCount, string> = {
   3: 'Easy',

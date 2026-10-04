@@ -36,7 +36,7 @@ export function DailyPuzzleScreen({ navigation }: Props) {
     () =>
       createBoard({
         colorCount: 4,
-        boardSize: BOARD_PRESETS['10x10'],
+        boardSize: BOARD_PRESETS['8x12'],
         seed,
       }),
     [seed],
@@ -91,7 +91,7 @@ export function DailyPuzzleScreen({ navigation }: Props) {
             onPress={() =>
               navigation.navigate('Game', {
                 colorCount: 4,
-                boardPreset: '10x10',
+                boardPreset: '8x12',
                 daily: true,
                 seed,
               })

@@ -9,12 +9,15 @@ interface Props {
   hint?: string;
   onPress?: () => void;
   right?: ReactNode;
+  /** 20px muted outline leading icon */
+  icon?: ReactNode;
   disabled?: boolean;
 }
 
-export function ListItem({ label, hint, onPress, right, disabled }: Props) {
+export function ListItem({ label, hint, onPress, right, icon, disabled }: Props) {
   const body = (
     <View style={[styles.row, disabled && styles.disabled]}>
+      {icon ? <View style={styles.icon}>{icon}</View> : null}
       <View style={styles.copy}>
         <Text style={styles.label}>{label}</Text>
         {hint ? <Text style={styles.hint}>{hint}</Text> : null}
@@ -39,6 +42,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
     minHeight: 52,
+  },
+  icon: {
+    width: 28,
+    marginRight: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   copy: { flex: 1, paddingRight: 12 },
   label: {

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppButton } from '../components/AppButton';
 import { BoardView } from '../components/BoardView';
@@ -17,8 +17,15 @@ import {
 } from '../components/Icons';
 import { ScreenBackground } from '../components/ScreenBackground';
 import { useApp } from '../context/AppContext';
-import { BOARD_PRESETS, GameEngine, clusterScore, type Position } from '../engine';
+import {
+  BOARD_PRESETS,
+  GameEngine,
+  clusterScore,
+  type BoardPreset,
+  type Position,
+} from '../engine';
 import type { RootStackParamList } from '../navigation/types';
+import { resolvePlayablePreset } from '../theme/boardLayout';
 import { colors } from '../theme/colors';
 import { layout } from '../theme/layout';
 import { fonts, typeScale } from '../theme/typography';
@@ -39,8 +46,29 @@ function toKeySet(positions: Position[] | null | undefined): Set<string> {
 export function GameScreen({ navigation, route }: Props) {
   const { colorCount, boardPreset, daily, seed } = route.params;
   const { settings, highScore, recordScore, applyGameStats } = useApp();
-  const resolvedPreset =
-    boardPreset in BOARD_PRESETS ? boardPreset : ('12x14' as const);
+  const { width: screenW, height: screenH } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+
+  const requested: BoardPreset =
+    boardPreset in BOARD_PRESETS ? boardPreset : '10x14';
+
+  const resolvedPreset = useMemo(() => {
+    const topChrome = insets.top + layout.chromeTop;
+    const bottomChrome = insets.bottom + layout.chromeBottom;
+    const { preset, fellBack } = resolvePlayablePreset(
+      requested,
+      screenW,
+      screenH,
+      topChrome,
+      bottomChrome,
+    );
+    if (fellBack && typeof __DEV__ !== 'undefined' && __DEV__) {
+      console.info(
+        `[Board] ${requested} < ${layout.minTile}pt → using ${preset}`,
+      );
+    }
+    return preset;
+  }, [requested, screenW, screenH, insets.top, insets.bottom]);
 
   const engineRef = useRef(
     new GameEngine(
