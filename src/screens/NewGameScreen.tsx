@@ -26,14 +26,15 @@ const DIFFICULTY_COLOR: Record<ColorCount, string> = {
 
 /** Mini grid icon — centered in fixed-height box so labels share a baseline. */
 function MiniGrid({ cols, rows, active }: { cols: number; rows: number; active: boolean }) {
-  const cell = cols >= 12 ? 2.8 : cols >= 10 ? 3.4 : 4;
+  const showRows = Math.min(rows, 10);
+  const cell = rows >= 16 ? 2.6 : cols >= 10 ? 3.2 : 4;
   const gap = 1;
   return (
     <View style={styles.iconBox}>
       <View style={{ gap, alignItems: 'center' }}>
-        {Array.from({ length: Math.min(rows, 8) }).map((_, r) => (
+        {Array.from({ length: showRows }).map((_, r) => (
           <View key={r} style={{ flexDirection: 'row', gap }}>
-            {Array.from({ length: Math.min(cols, 8) }).map((_, c) => (
+            {Array.from({ length: cols }).map((_, c) => (
               <View
                 key={c}
                 style={{

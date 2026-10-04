@@ -1,10 +1,31 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { BlurView } from 'expo-blur';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
+import {
+  AccessibilityInfo,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppButton } from '../components/AppButton';
 import { BoardView } from '../components/BoardView';
+import { GameBackground } from '../components/GameBackground';
 import {
   IconHint,
   IconHome,
@@ -15,12 +36,11 @@ import {
   IconSettings,
   IconUndo,
 } from '../components/Icons';
-import { ScreenBackground } from '../components/ScreenBackground';
 import { useApp } from '../context/AppContext';
 import {
   BOARD_PRESETS,
   GameEngine,
-  clusterScore,
+  hasValidMoves,
   type BoardPreset,
   type Position,
 } from '../engine';
@@ -48,13 +68,24 @@ export function GameScreen({ navigation, route }: Props) {
   const { settings, highScore, recordScore, applyGameStats } = useApp();
   const { width: screenW, height: screenH } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
+    const sub = AccessibilityInfo.addEventListener(
+      'reduceMotionChanged',
+      setReduceMotion,
+    );
+    return () => sub.remove();
+  }, []);
 
   const requested: BoardPreset =
     boardPreset in BOARD_PRESETS ? boardPreset : '10x14';
 
+  const topChrome = insets.top + layout.chromeTop + layout.hudBoardGap;
+  const bottomChrome = insets.bottom + layout.chromeBottom;
+
   const resolvedPreset = useMemo(() => {
-    const topChrome = insets.top + layout.chromeTop;
-    const bottomChrome = insets.bottom + layout.chromeBottom;
     const { preset, fellBack } = resolvePlayablePreset(
       requested,
       screenW,
@@ -68,7 +99,7 @@ export function GameScreen({ navigation, route }: Props) {
       );
     }
     return preset;
-  }, [requested, screenW, screenH, insets.top, insets.bottom]);
+  }, [requested, screenW, screenH, topChrome, bottomChrome]);
 
   const engineRef = useRef(
     new GameEngine(
@@ -89,6 +120,9 @@ export function GameScreen({ navigation, route }: Props) {
   const endingRef = useRef(false);
   const tilesClearedRef = useRef(0);
   const undosUsedRef = useRef(0);
+
+  const reactionStrength = useSharedValue(0);
+  const [reactionColor, setReactionColor] = useState<string>(colors.tile.A);
 
   const bump = useCallback(() => setTick((t) => t + 1), []);
 
@@ -143,6 +177,20 @@ export function GameScreen({ navigation, route }: Props) {
     }
   }, [snap.status, finishIfNeeded]);
 
+  const triggerClearReaction = useCallback(
+    (cluster: Position[]) => {
+      if (reduceMotion || cluster.length === 0) return;
+      const cell = engine.getBoard()[cluster[0].col]?.[cluster[0].row];
+      if (cell) setReactionColor(colors.tile[cell]);
+      const boost = Math.min(0.14, 0.06 + cluster.length * 0.006);
+      reactionStrength.value = withSequence(
+        withTiming(boost, { duration: 200 }),
+        withTiming(0, { duration: 700 }),
+      );
+    },
+    [engine, reactionStrength, reduceMotion],
+  );
+
   const onTilePress = (pos: Position) => {
     if (paused || engine.getStatus() !== 'playing') return;
     setHint(null);
@@ -156,6 +204,7 @@ export function GameScreen({ navigation, route }: Props) {
       selected != null && selected.some((p) => `${p.col},${p.row}` === key);
     if (already) {
       tilesClearedRef.current += cluster.length;
+      triggerClearReaction(cluster);
       engine.clearCluster(cluster);
       setSelected(null);
       bump();
@@ -192,6 +241,7 @@ export function GameScreen({ navigation, route }: Props) {
     setSelected(null);
     setHint(null);
     setPaused(false);
+    reactionStrength.value = 0;
     bump();
   };
 
@@ -221,60 +271,111 @@ export function GameScreen({ navigation, route }: Props) {
     setSelected(null);
   };
 
+  const canUndo = engine.canUndo();
+  const canRedo = engine.canRedo();
+  const hintReady = hasValidMoves(snap.board);
+
   return (
-    <ScreenBackground>
-      <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
-        <View style={styles.topBar}>
-          <View style={styles.sideSlot} />
-          <View style={styles.scoreCenter}>
-            <Text style={styles.scoreLabel}>Score</Text>
-            <Text style={styles.score}>{formatScore(snap.score)}</Text>
+    <GameBackground
+      reduceMotion={reduceMotion}
+      clearReaction={{ strength: reactionStrength, color: reactionColor }}
+    >
+      <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+        {/* Playfield: HUD + board as one vertically centered unit */}
+        <View
+          style={[
+            styles.playfield,
+            { paddingBottom: layout.dockHeight + insets.bottom + 12 },
+          ]}
+        >
+          <View style={styles.unit}>
+            <View style={styles.hud}>
+              <View style={styles.sideSlot} />
+              <View style={styles.scoreCenter}>
+                <Text style={styles.scoreLabel}>SCORE</Text>
+                <Text style={styles.score}>{formatScore(snap.score)}</Text>
+              </View>
+              <Pressable
+                onPress={onPause}
+                style={styles.pauseBtn}
+                accessibilityLabel="Pause"
+              >
+                <LinearGradient
+                  colors={['rgba(255,255,255,0.10)', 'rgba(255,255,255,0.03)']}
+                  style={styles.pauseFill}
+                >
+                  <IconPause size={20} />
+                </LinearGradient>
+              </Pressable>
+            </View>
+
+            <View style={{ height: layout.hudBoardGap }} />
+
+            <BoardView
+              board={snap.board}
+              selected={toKeySet(selected)}
+              hintKeys={toKeySet(hint)}
+              showLetters={settings.showTileLetters}
+              onTilePress={onTilePress}
+              topChrome={topChrome}
+              bottomChrome={bottomChrome}
+            />
           </View>
-          <Pressable onPress={onPause} style={styles.iconBtn} accessibilityLabel="Pause">
-            <IconPause />
-          </Pressable>
         </View>
 
-        <View style={styles.boardWrap}>
-          <BoardView
-            board={snap.board}
-            selected={toKeySet(selected)}
-            hintKeys={toKeySet(hint)}
-            showLetters={settings.showTileLetters}
-            onTilePress={onTilePress}
-          />
-          {selected && selected.length > 2 ? (
-            <Text style={styles.preview}>
-              Clear {selected.length} → +{formatScore(clusterScore(selected.length, colorCount))}
-            </Text>
-          ) : selected && selected.length === 2 ? (
-            <Text style={styles.previewMuted}>Size 2 clears but scores 0</Text>
-          ) : null}
-        </View>
-
-        <View style={styles.controls}>
-          <IconControl
-            label="Undo"
-            disabled={!engine.canUndo()}
-            onPress={onUndo}
+        {/* Glass bottom dock */}
+        <View
+          style={[
+            styles.dockWrap,
+            { paddingBottom: Math.max(insets.bottom, 10) },
+          ]}
+        >
+          <LinearGradient
+            colors={['rgba(255,255,255,0.10)', 'rgba(255,255,255,0.03)']}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={styles.dockBorder}
           >
-            <IconUndo color={engine.canUndo() ? colors.text : colors.textMuted} />
-          </IconControl>
-          <IconControl
-            label="Redo"
-            disabled={!engine.canRedo()}
-            onPress={onRedo}
-          >
-            <IconRedo color={engine.canRedo() ? colors.text : colors.textMuted} />
-          </IconControl>
-          <IconControl label="Hint" onPress={onHint}>
-            <IconHint color={colors.cream} />
-          </IconControl>
+            <LinearGradient
+              colors={['rgba(17,27,46,0.92)', 'rgba(11,18,32,0.96)']}
+              style={styles.dock}
+            >
+              <DockButton
+                label="Undo"
+                disabled={!canUndo}
+                onPress={onUndo}
+              >
+                <IconUndo
+                  size={24}
+                  color={canUndo ? colors.text : colors.textMuted}
+                />
+              </DockButton>
+              <DockButton
+                label="Redo"
+                disabled={!canRedo}
+                onPress={onRedo}
+              >
+                <IconRedo
+                  size={24}
+                  color={canRedo ? colors.text : colors.textMuted}
+                />
+              </DockButton>
+              <DockButton
+                label="Hint"
+                onPress={onHint}
+                hintReady={hintReady}
+              >
+                <IconHint
+                  size={24}
+                  color={hintReady ? colors.accent : colors.textMuted}
+                />
+              </DockButton>
+            </LinearGradient>
+          </LinearGradient>
         </View>
 
         {paused ? (
           <View style={styles.overlay}>
-            <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
             <View style={styles.dim} />
             <View style={styles.modal}>
               <Text style={styles.pausedTitle}>Paused</Text>
@@ -306,30 +407,52 @@ export function GameScreen({ navigation, route }: Props) {
           </View>
         ) : null}
       </SafeAreaView>
-    </ScreenBackground>
+    </GameBackground>
   );
 }
 
-function IconControl({
+function DockButton({
   label,
   onPress,
   disabled,
+  hintReady,
   children,
 }: {
   label: string;
   onPress: () => void;
   disabled?: boolean;
+  hintReady?: boolean;
   children: ReactNode;
 }) {
+  const scale = useSharedValue(1);
+  const anim = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
       accessibilityLabel={label}
-      style={[styles.controlBtn, disabled && styles.controlDisabled]}
+      onPressIn={() => {
+        scale.value = withTiming(0.95, { duration: 80 });
+      }}
+      onPressOut={() => {
+        scale.value = withTiming(1, { duration: 100 });
+      }}
+      style={styles.dockBtnHit}
     >
-      {children}
-      <Text style={[styles.controlLabel, disabled && styles.controlLabelDisabled]}>
+      <Animated.View
+        style={[
+          styles.dockBtn,
+          disabled && styles.dockBtnDisabled,
+          hintReady && styles.dockBtnHint,
+          anim,
+        ]}
+      >
+        {children}
+      </Animated.View>
+      <Text style={[styles.dockLabel, disabled && styles.dockLabelDisabled]}>
         {label}
       </Text>
     </Pressable>
@@ -338,87 +461,116 @@ function IconControl({
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  topBar: {
+  playfield: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: layout.boardScreenMargin,
+  },
+  unit: {
+    alignItems: 'center',
+    width: '100%',
+  },
+  hud: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: layout.screenPad,
-    paddingTop: 2,
-    paddingBottom: 6,
-    minHeight: layout.chromeTop,
+    width: '100%',
+    paddingHorizontal: 4,
+    minHeight: layout.pauseBtnSize,
   },
-  sideSlot: { width: layout.iconBtn },
-  iconBtn: {
-    width: layout.iconBtn,
-    height: layout.iconBtn,
-    minWidth: layout.iconBtn,
-    minHeight: layout.iconBtn,
-    borderRadius: layout.buttonRadius,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  sideSlot: { width: layout.pauseBtnSize },
   scoreCenter: { alignItems: 'center', flex: 1 },
   scoreLabel: {
-    ...typeScale.label,
+    fontFamily: fonts.semibold,
     fontSize: 11,
-    letterSpacing: 1.5,
+    letterSpacing: 2.2,
+    fontWeight: '600',
     color: colors.textMuted,
   },
   score: {
     ...typeScale.score,
     color: colors.text,
+    textShadowColor: 'rgba(255,255,255,0.25)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 12,
   },
-  boardWrap: {
+  pauseBtn: {
+    width: layout.pauseBtnSize,
+    height: layout.pauseBtnSize,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.14)',
+  },
+  pauseFill: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    gap: 10,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(17,27,46,0.85)',
   },
-  preview: {
-    fontFamily: fonts.bold,
-    textAlign: 'center',
-    color: colors.cream,
-    fontSize: 14,
-    fontWeight: '700',
+  dockWrap: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: layout.dockSideMargin,
+    zIndex: 5,
   },
-  previewMuted: {
-    fontFamily: fonts.regular,
-    textAlign: 'center',
-    color: colors.textMuted,
-    fontSize: 13,
+  dockBorder: {
+    borderRadius: layout.dockRadius,
+    padding: 1,
   },
-  controls: {
+  dock: {
+    height: layout.dockHeight,
+    borderRadius: layout.dockRadius - 1,
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 22,
-    paddingBottom: 14,
-    paddingTop: 4,
-    paddingHorizontal: layout.screenPad,
-    minHeight: layout.chromeBottom,
+    alignItems: 'center',
+    justifyContent: 'space-evenly',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
-  controlBtn: {
-    minWidth: 64,
+  dockBtnHit: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
-    paddingVertical: 8,
+    gap: 6,
+    minWidth: 72,
   },
-  controlDisabled: { opacity: 0.35 },
-  controlLabel: {
+  dockBtn: {
+    width: layout.dockBtnSize,
+    height: layout.dockBtnSize,
+    borderRadius: layout.dockBtnSize / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.14)',
+  },
+  dockBtnDisabled: {
+    opacity: 0.45,
+  },
+  dockBtnHint: {
+    borderColor: colors.accent,
+    shadowColor: colors.accent,
+    shadowOpacity: 0.45,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 0 },
+  },
+  dockLabel: {
     fontFamily: fonts.semibold,
     color: colors.textMuted,
-    fontSize: layout.controlLabelSize,
+    fontSize: 11,
     fontWeight: '600',
   },
-  controlLabelDisabled: { color: colors.textMuted },
+  dockLabelDisabled: {
+    opacity: 0.7,
+  },
   overlay: {
     ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
+    zIndex: 20,
   },
   dim: {
     ...StyleSheet.absoluteFill,

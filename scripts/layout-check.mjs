@@ -5,12 +5,12 @@
 
 const layout = {
   boardScreenMargin: 8,
-  boardPad: 6,
+  boardPad: 8,
   tileGapPx: 2,
   minTile: 30,
   maxTile: 72,
-  chromeTop: 56,
-  chromeBottom: 80,
+  chromeTop: 64,
+  chromeBottom: 104,
 };
 
 function computeBoardLayout({
@@ -59,7 +59,7 @@ const sizes = [
 const presets = [
   [8, 12, '8x12 Small'],
   [10, 14, '10x14 Medium'],
-  [12, 16, '12x16 Large'],
+  [10, 16, '10x16 Large'],
 ];
 
 console.log('=== PLINK tile size report ===');

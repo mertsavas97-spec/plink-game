@@ -3,7 +3,7 @@ import type { TileColorId } from '../theme/colors';
 export type ColorCount = 3 | 4 | 5;
 
 /** Board presets: cols × rows (Small / Medium / Large). */
-export type BoardPreset = '8x12' | '10x14' | '12x16';
+export type BoardPreset = '8x12' | '10x14' | '10x16';
 
 export interface BoardSize {
   rows: number;
@@ -67,18 +67,18 @@ export const BOARD_PRESETS: Record<BoardPreset, BoardSize> = {
     name: 'Medium',
     tileCount: 140,
   },
-  '12x16': {
+  '10x16': {
     rows: 16,
-    cols: 12,
-    preset: '12x16',
-    label: '12 × 16',
+    cols: 10,
+    preset: '10x16',
+    label: '10 × 16',
     name: 'Large',
-    tileCount: 192,
+    tileCount: 160,
   },
 };
 
 /** Ordered smallest → largest for fallback. */
-export const BOARD_PRESET_ORDER: BoardPreset[] = ['8x12', '10x14', '12x16'];
+export const BOARD_PRESET_ORDER: BoardPreset[] = ['8x12', '10x14', '10x16'];
 
 export const DEFAULT_BOARD_PRESET: BoardPreset = '10x14';
 

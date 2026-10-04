@@ -14,10 +14,19 @@ export const layout = {
   letterScaleDense: 0.48,
   /** Fixed 2px gap between tiles */
   tileGapPx: 2,
-  boardPad: 6,
-  boardRadius: 16,
-  chromeTop: 56,
-  chromeBottom: 80,
+  /** Tray padding */
+  boardPad: 8,
+  boardRadius: 22,
+  /** HUD block above tray */
+  chromeTop: 64,
+  /** Glass dock (~88) + breathing room */
+  chromeBottom: 104,
+  hudBoardGap: 16,
+  dockHeight: 88,
+  dockRadius: 28,
+  dockBtnSize: 56,
+  dockSideMargin: 16,
+  pauseBtnSize: 48,
   tileRadiusRatio: 0.22,
   tileBevelRatio: 0.08,
   tileBevelMin: 2,
@@ -55,7 +64,6 @@ export const layout = {
   labelTracking: 1.8,
   titleTracking: -0.3,
   glowCenterOpacity: 0.14,
-  /** New Game size-card icon box */
   sizeCardIconH: 72,
   sizeCardH: 140,
 } as const;

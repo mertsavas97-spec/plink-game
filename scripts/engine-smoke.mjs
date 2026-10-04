@@ -116,8 +116,8 @@ const small = createBoard(8, 12, 3, 7);
 assert(small.length === 8 && small[0].length === 12, '8×12 rectangular board');
 const medium = createBoard(10, 14, 4, 11);
 assert(medium.length === 10 && medium[0].length === 14, '10×14 rectangular board');
-const large = createBoard(12, 16, 5, 99);
-assert(large.length === 12 && large[0].length === 16, '12×16 rectangular board');
+const large = createBoard(10, 16, 5, 99);
+assert(large.length === 10 && large[0].length === 16, '10×16 rectangular board');
 assert(Math.floor(Math.min(360 / 10, 480 / 14)) === 34, 'tile size uses min(W/cols, H/rows)');
 
 console.log('engine-smoke: ok');

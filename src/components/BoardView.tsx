@@ -1,6 +1,20 @@
-import React, { useMemo, useCallback } from 'react';
-import { StyleSheet, View, useWindowDimensions, type GestureResponderEvent } from 'react-native';
+import React, { useMemo, useCallback, memo } from 'react';
+import {
+  Platform,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+  type GestureResponderEvent,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, {
+  Defs,
+  LinearGradient as SvgGrad,
+  Pattern,
+  Rect,
+  Stop,
+} from 'react-native-svg';
 import type { Board, Position } from '../engine';
 import { computeBoardLayout } from '../theme/boardLayout';
 import { colors } from '../theme/colors';
@@ -13,15 +27,92 @@ interface Props {
   showLetters: boolean;
   onTilePress: (pos: Position) => void;
   hintKeys?: Set<string>;
+  /** Extra chrome reserved above (HUD) / below (dock) — overrides defaults */
+  topChrome?: number;
+  bottomChrome?: number;
 }
 
 function posKey(col: number, row: number) {
   return `${col},${row}`;
 }
 
+/** One SVG Pattern of cell sockets — static, stays after clears, under tiles. */
+const SocketLayer = memo(function SocketLayer({
+  cols,
+  rows,
+  tileSize,
+  gap,
+  radius,
+}: {
+  cols: number;
+  rows: number;
+  tileSize: number;
+  gap: number;
+  radius: number;
+}) {
+  const pitch = tileSize + gap;
+  const width = cols * tileSize + (cols - 1) * gap;
+  const height = rows * tileSize + (rows - 1) * gap;
+  const patternId = `sock-${tileSize}-${gap}-${radius}`;
+
+  return (
+    <Svg
+      width={width}
+      height={height}
+      style={styles.sockets}
+      pointerEvents="none"
+    >
+      <Defs>
+        <SvgGrad id={`${patternId}-fill`} x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0%" stopColor="#000000" stopOpacity={0.34} />
+          <Stop offset="55%" stopColor="#000000" stopOpacity={0.28} />
+          <Stop offset="100%" stopColor="#000000" stopOpacity={0.22} />
+        </SvgGrad>
+        <Pattern
+          id={patternId}
+          width={pitch}
+          height={pitch}
+          patternUnits="userSpaceOnUse"
+        >
+          <Rect
+            x={0}
+            y={0}
+            width={tileSize}
+            height={tileSize}
+            rx={radius}
+            ry={radius}
+            fill={`url(#${patternId}-fill)`}
+          />
+          {/* Inner top darker band */}
+          <Rect
+            x={1}
+            y={1}
+            width={tileSize - 2}
+            height={Math.max(3, tileSize * 0.18)}
+            rx={radius * 0.45}
+            fill="#000000"
+            opacity={0.18}
+          />
+          {/* Light bottom edge ~white@5% */}
+          <Rect
+            x={2}
+            y={tileSize - 3}
+            width={tileSize - 4}
+            height={2}
+            rx={1}
+            fill="#FFFFFF"
+            opacity={0.05}
+          />
+        </Pattern>
+      </Defs>
+      <Rect x={0} y={0} width={width} height={height} fill={`url(#${patternId})`} />
+    </Svg>
+  );
+});
+
 /**
- * Responsive board — margin 8, pad 6, gap 2.
- * Single container gesture resolves cell from (x,y) including gaps (no dead zones).
+ * Responsive board tray — padding 8, radius 22, glass border + sockets.
+ * Single container gesture resolves cell from (x,y) including gaps.
  */
 export function BoardView({
   board,
@@ -29,6 +120,8 @@ export function BoardView({
   showLetters,
   onTilePress,
   hintKeys,
+  topChrome: topChromeProp,
+  bottomChrome: bottomChromeProp,
 }: Props) {
   const { width: screenW, height: screenH } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -36,8 +129,8 @@ export function BoardView({
   const rows = board[0]?.length ?? 0;
 
   const { tileSize, gap, panelWidth, panelHeight } = useMemo(() => {
-    const topChrome = insets.top + layout.chromeTop;
-    const bottomChrome = insets.bottom + layout.chromeBottom;
+    const topChrome = topChromeProp ?? insets.top + layout.chromeTop;
+    const bottomChrome = bottomChromeProp ?? insets.bottom + layout.chromeBottom;
     return computeBoardLayout({
       screenW,
       screenH,
@@ -46,7 +139,16 @@ export function BoardView({
       topChrome,
       bottomChrome,
     });
-  }, [screenW, screenH, cols, rows, insets.top, insets.bottom]);
+  }, [
+    screenW,
+    screenH,
+    cols,
+    rows,
+    insets.top,
+    insets.bottom,
+    topChromeProp,
+    bottomChromeProp,
+  ]);
 
   const rowIndices = useMemo(
     () => Array.from({ length: rows }, (_, i) => rows - 1 - i),
@@ -56,6 +158,7 @@ export function BoardView({
   const dense = cols >= 12;
   const pad = layout.boardPad;
   const pitch = tileSize + gap;
+  const socketRadius = Math.max(5, Math.round(tileSize * layout.tileRadiusRatio));
 
   const resolvePos = useCallback(
     (x: number, y: number): Position | null => {
@@ -83,49 +186,123 @@ export function BoardView({
     [resolvePos, onTilePress],
   );
 
+  const radius = layout.boardRadius;
+
   return (
     <View style={styles.outer}>
+      {/* Soft outer glow — blue TL / magenta BR */}
+      <View
+        pointerEvents="none"
+        style={[
+          styles.glowBlue,
+          { width: panelWidth + 24, height: panelHeight + 24, borderRadius: radius + 8 },
+        ]}
+      />
+      <View
+        pointerEvents="none"
+        style={[
+          styles.glowMagenta,
+          { width: panelWidth + 24, height: panelHeight + 24, borderRadius: radius + 8 },
+        ]}
+      />
+
+      {/* Shadow plate */}
       <View
         style={[
-          styles.frame,
-          { width: panelWidth, height: panelHeight, padding: pad },
+          styles.shadow,
+          {
+            width: panelWidth,
+            height: panelHeight,
+            borderRadius: radius,
+          },
         ]}
-        onStartShouldSetResponder={() => true}
-        onResponderRelease={onTouch}
       >
-        {rowIndices.map((row, ri) => (
-          <View
-            key={`r-${row}`}
-            style={[styles.row, ri < rows - 1 ? { marginBottom: gap } : null]}
+        {/* Border shell: top brighter → bottom softer */}
+        <LinearGradient
+          colors={[
+            'rgba(255,255,255,0.18)',
+            'rgba(255,255,255,0.08)',
+            'rgba(255,255,255,0.04)',
+          ]}
+          locations={[0, 0.45, 1]}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={[styles.borderShell, { borderRadius: radius, padding: 1 }]}
+        >
+          <LinearGradient
+            colors={['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.03)']}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={[
+              styles.tray,
+              {
+                width: panelWidth - 2,
+                height: panelHeight - 2,
+                borderRadius: radius - 1,
+                backgroundColor: '#0B1528',
+              },
+            ]}
           >
-            {Array.from({ length: cols }, (_, col) => {
-              const cell = board[col][row];
-              const cellStyle = {
-                width: tileSize,
-                height: tileSize,
-                marginRight: col < cols - 1 ? gap : 0,
-              };
-              if (cell == null) {
-                return <View key={`e-${col}-${row}`} style={cellStyle} />;
-              }
-              const key = posKey(col, row);
-              const isSelected =
-                selected.has(key) || (hintKeys?.has(key) ?? false);
-              return (
-                <View key={key} style={cellStyle}>
-                  <Tile
-                    colorId={cell}
-                    size={tileSize}
-                    gap={0}
-                    dense={dense}
-                    selected={isSelected}
-                    showLetter={showLetters}
-                  />
+            <View
+              style={{ flex: 1, padding: pad }}
+              onStartShouldSetResponder={() => true}
+              onResponderRelease={onTouch}
+            >
+              {/* Thin inner top highlight */}
+              <View pointerEvents="none" style={styles.innerHighlight} />
+
+              <View style={{ width: cols * tileSize + (cols - 1) * gap }}>
+                <SocketLayer
+                  cols={cols}
+                  rows={rows}
+                  tileSize={tileSize}
+                  gap={gap}
+                  radius={socketRadius}
+                />
+                <View style={styles.tileLayer}>
+                  {rowIndices.map((row, ri) => (
+                    <View
+                      key={`r-${row}`}
+                      style={[
+                        styles.row,
+                        ri < rows - 1 ? { marginBottom: gap } : null,
+                      ]}
+                    >
+                      {Array.from({ length: cols }, (_, col) => {
+                        const cell = board[col][row];
+                        const cellStyle = {
+                          width: tileSize,
+                          height: tileSize,
+                          marginRight: col < cols - 1 ? gap : 0,
+                        };
+                        if (cell == null) {
+                          return (
+                            <View key={`e-${col}-${row}`} style={cellStyle} />
+                          );
+                        }
+                        const key = posKey(col, row);
+                        const isSelected =
+                          selected.has(key) || (hintKeys?.has(key) ?? false);
+                        return (
+                          <View key={key} style={cellStyle}>
+                            <Tile
+                              colorId={cell}
+                              size={tileSize}
+                              gap={0}
+                              dense={dense}
+                              selected={isSelected}
+                              showLetter={showLetters}
+                            />
+                          </View>
+                        );
+                      })}
+                    </View>
+                  ))}
                 </View>
-              );
-            })}
-          </View>
-        ))}
+              </View>
+            </View>
+          </LinearGradient>
+        </LinearGradient>
       </View>
     </View>
   );
@@ -133,19 +310,77 @@ export function BoardView({
 
 const styles = StyleSheet.create({
   outer: {
-    width: '100%',
-    paddingHorizontal: layout.boardScreenMargin,
     alignItems: 'center',
     justifyContent: 'center',
-    flex: 1,
   },
-  frame: {
-    alignSelf: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: layout.boardRadius,
-    borderWidth: 1,
-    borderColor: colors.border,
+  glowBlue: {
+    position: 'absolute',
+    backgroundColor: 'rgba(45, 120, 240, 0.10)',
+    ...Platform.select({
+      ios: {
+        shadowColor: colors.glowBlueHex,
+        shadowOpacity: 0.55,
+        shadowRadius: 28,
+        shadowOffset: { width: -6, height: -6 },
+      },
+      default: {},
+    }),
+  },
+  glowMagenta: {
+    position: 'absolute',
+    backgroundColor: 'rgba(226, 24, 192, 0.08)',
+    ...Platform.select({
+      ios: {
+        shadowColor: colors.glowMagentaHex,
+        shadowOpacity: 0.5,
+        shadowRadius: 28,
+        shadowOffset: { width: 6, height: 8 },
+      },
+      default: {},
+    }),
+  },
+  shadow: {
+    backgroundColor: 'transparent',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000000',
+        shadowOpacity: 0.45,
+        shadowRadius: 24,
+        shadowOffset: { width: 0, height: 12 },
+      },
+      android: { elevation: 12 },
+      default: {
+        shadowColor: '#000000',
+        shadowOpacity: 0.45,
+        shadowRadius: 24,
+        shadowOffset: { width: 0, height: 12 },
+      },
+    }),
+  },
+  borderShell: {
     overflow: 'hidden',
+  },
+  tray: {
+    overflow: 'hidden',
+  },
+  innerHighlight: {
+    position: 'absolute',
+    top: 1,
+    left: 10,
+    right: 10,
+    height: StyleSheet.hairlineWidth * 2,
+    backgroundColor: 'rgba(255,255,255,0.14)',
+    borderRadius: 1,
+    zIndex: 3,
+  },
+  sockets: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    zIndex: 0,
+  },
+  tileLayer: {
+    zIndex: 1,
   },
   row: {
     flexDirection: 'row',
