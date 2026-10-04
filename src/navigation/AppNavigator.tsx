@@ -10,6 +10,7 @@ import { MainMenuScreen } from '../screens/MainMenuScreen';
 import { NewGameScreen } from '../screens/NewGameScreen';
 import { OnboardingScreen } from '../screens/OnboardingScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
+import { SplashScreen } from '../screens/SplashScreen';
 import { colors } from '../theme/colors';
 import type { RootStackParamList } from './types';
 
@@ -28,7 +29,7 @@ const navTheme = {
 };
 
 export function AppNavigator() {
-  const { ready, onboardingDone } = useApp();
+  const { ready } = useApp();
 
   if (!ready) {
     return (
@@ -41,9 +42,10 @@ export function AppNavigator() {
   return (
     <NavigationContainer theme={navTheme}>
       <Stack.Navigator
-        initialRouteName={onboardingDone ? 'MainMenu' : 'Onboarding'}
+        initialRouteName="Splash"
         screenOptions={{ headerShown: false, animation: 'fade' }}
       >
+        <Stack.Screen name="Splash" component={SplashScreen} />
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
         <Stack.Screen name="MainMenu" component={MainMenuScreen} />
         <Stack.Screen name="NewGame" component={NewGameScreen} />

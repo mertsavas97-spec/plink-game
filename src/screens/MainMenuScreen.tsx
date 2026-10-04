@@ -2,11 +2,13 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { IconCrown, IconPlay, IconSettings } from '../components/Icons';
 import { PillButton } from '../components/PillButton';
 import { PlinkLogo } from '../components/PlinkLogo';
 import { useApp } from '../context/AppContext';
 import type { RootStackParamList } from '../navigation/types';
 import { colors } from '../theme/colors';
+import { fonts } from '../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MainMenu'>;
 
@@ -26,7 +28,7 @@ export function MainMenuScreen({ navigation }: Props) {
           onPress={() => navigation.navigate('Settings')}
           style={styles.gear}
         >
-          <Text style={styles.gearText}>⚙</Text>
+          <IconSettings />
         </Pressable>
       </View>
 
@@ -38,7 +40,8 @@ export function MainMenuScreen({ navigation }: Props) {
       <View style={styles.actions}>
         <PillButton
           label="Play"
-          variant="mint"
+          variant="primary"
+          icon={<IconPlay size={18} color={colors.textDark} />}
           onPress={() => navigation.navigate('NewGame')}
           style={styles.play}
         />
@@ -59,10 +62,12 @@ export function MainMenuScreen({ navigation }: Props) {
         />
       </View>
 
-      <View style={styles.footer}>
-        <Text style={styles.crown}>♛</Text>
-        <Text style={styles.highLabel}>High Score</Text>
-        <Text style={styles.highValue}>{formatScore(highScore)}</Text>
+      <View style={styles.footerBanner}>
+        <IconCrown size={20} />
+        <View>
+          <Text style={styles.highLabel}>High Score</Text>
+          <Text style={styles.highValue}>{formatScore(highScore)}</Text>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -79,24 +84,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  gearText: { color: colors.text, fontSize: 20 },
-  hero: { flex: 1, justifyContent: 'center', alignItems: 'flex-start', gap: 10 },
+  hero: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 14 },
   tagline: {
+    fontFamily: fonts.semibold,
     color: colors.textMuted,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    letterSpacing: 0.8,
+    letterSpacing: 1.2,
+    textAlign: 'center',
   },
-  actions: { gap: 12, marginBottom: 28 },
+  actions: { gap: 12, marginBottom: 20 },
   play: { minHeight: 58 },
-  footer: {
+  footerBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    paddingBottom: 18,
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    marginBottom: 12,
+    borderRadius: 16,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  crown: { color: colors.gold, fontSize: 18 },
-  highLabel: { color: colors.textMuted, fontSize: 14, fontWeight: '600' },
-  highValue: { color: colors.gold, fontSize: 16, fontWeight: '800' },
+  highLabel: {
+    fontFamily: fonts.semibold,
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  highValue: {
+    fontFamily: fonts.extrabold,
+    color: colors.gold,
+    fontSize: 18,
+    fontWeight: '800',
+  },
 });

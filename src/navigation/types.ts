@@ -1,6 +1,7 @@
 import type { ColorCount, BoardPreset } from '../engine';
 
 export type RootStackParamList = {
+  Splash: undefined;
   Onboarding: undefined;
   MainMenu: undefined;
   NewGame: undefined;

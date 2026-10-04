@@ -13,6 +13,12 @@ export const colors = {
   danger: '#F35A5A',
   selection: '#FFFFFF',
   overlay: 'rgba(6, 10, 18, 0.78)',
+  /** Difficulty accent colors (moodboard Easy/Medium/Hard). */
+  difficulty: {
+    easy: '#3DDC97',
+    medium: '#2DF3E5',
+    hard: '#F35A5A',
+  },
   tile: {
     A: '#2D7CF3',
     B: '#F32D5E',
@@ -33,3 +39,5 @@ export const TILE_COLOR_VALUES: Record<TileColorId, string> = {
   D: colors.tile.D,
   E: colors.tile.E,
 };
+
+export const LOGO_LETTERS = ['P', 'L', 'I', 'N', 'K'] as const;

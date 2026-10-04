@@ -5,6 +5,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { PillButton } from '../components/PillButton';
 import type { RootStackParamList } from '../navigation/types';
 import { colors } from '../theme/colors';
+import { fonts } from '../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ComingSoon'>;
 
@@ -34,7 +35,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   content: { flex: 1, justifyContent: 'center', gap: 12 },
-  eyebrow: { color: colors.mint, fontWeight: '700', letterSpacing: 1.2, fontSize: 12 },
-  title: { color: colors.text, fontSize: 34, fontWeight: '800' },
-  body: { color: colors.textMuted, fontSize: 16, lineHeight: 24 },
+  eyebrow: {
+    fontFamily: fonts.bold,
+    color: colors.mint,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    fontSize: 12,
+  },
+  title: {
+    fontFamily: fonts.extrabold,
+    color: colors.text,
+    fontSize: 34,
+    fontWeight: '800',
+  },
+  body: {
+    fontFamily: fonts.regular,
+    color: colors.textMuted,
+    fontSize: 16,
+    lineHeight: 24,
+  },
 });

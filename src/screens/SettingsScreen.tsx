@@ -2,9 +2,11 @@ import React, { type ReactNode } from 'react';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { BOARD_PRESETS, type BoardPreset } from '../engine';
 import { useApp } from '../context/AppContext';
 import type { RootStackParamList } from '../navigation/types';
 import { colors } from '../theme/colors';
+import { fonts } from '../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
@@ -15,8 +17,21 @@ const LANGUAGES = [
   { code: 'tr', label: 'Türkçe' },
 ];
 
+const GRID_OPTIONS: BoardPreset[] = ['10x10', '12x14', '16x18'];
+
 export function SettingsScreen({ navigation }: Props) {
   const { settings, updateSettings, resetAllProgress } = useApp();
+
+  const bumpUndo = (delta: number) => {
+    const next = Math.min(20, Math.max(1, settings.undoLimit + delta));
+    updateSettings({ undoLimit: next });
+  };
+
+  const cycleGrid = () => {
+    const idx = GRID_OPTIONS.indexOf(settings.defaultBoardPreset);
+    const next = GRID_OPTIONS[(idx + 1) % GRID_OPTIONS.length];
+    updateSettings({ defaultBoardPreset: next });
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -62,6 +77,32 @@ export function SettingsScreen({ navigation }: Props) {
             />
           }
         />
+        <Row
+          label="Undo Limit"
+          hint="Max undo steps per game"
+          right={
+            <View style={styles.stepper}>
+              <Pressable onPress={() => bumpUndo(-1)} style={styles.stepBtn}>
+                <Text style={styles.stepBtnText}>−</Text>
+              </Pressable>
+              <Text style={styles.stepValue}>{settings.undoLimit}</Text>
+              <Pressable onPress={() => bumpUndo(1)} style={styles.stepBtn}>
+                <Text style={styles.stepBtnText}>+</Text>
+              </Pressable>
+            </View>
+          }
+        />
+        <Row
+          label="Grid Size"
+          hint="Default for New Game"
+          right={
+            <Pressable onPress={cycleGrid} style={styles.gridBtn}>
+              <Text style={styles.gridBtnText}>
+                {BOARD_PRESETS[settings.defaultBoardPreset].label}
+              </Text>
+            </Pressable>
+          }
+        />
       </View>
 
       <Text style={styles.section}>Language</Text>
@@ -82,10 +123,7 @@ export function SettingsScreen({ navigation }: Props) {
       </View>
       <Text style={styles.stubNote}>Language UI is stubbed; copy stays English for MVP.</Text>
 
-      <Pressable
-        onPress={() => void resetAllProgress()}
-        style={styles.reset}
-      >
+      <Pressable onPress={() => void resetAllProgress()} style={styles.reset}>
         <Text style={styles.resetText}>Reset Progress</Text>
       </Pressable>
     </SafeAreaView>
@@ -115,9 +153,21 @@ function Row({
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: 24 },
   back: { paddingVertical: 8, alignSelf: 'flex-start' },
-  backText: { color: colors.textMuted, fontSize: 16, fontWeight: '600' },
-  title: { color: colors.text, fontSize: 32, fontWeight: '800', marginBottom: 20 },
+  backText: {
+    fontFamily: fonts.semibold,
+    color: colors.textMuted,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  title: {
+    fontFamily: fonts.extrabold,
+    color: colors.text,
+    fontSize: 32,
+    fontWeight: '800',
+    marginBottom: 20,
+  },
   section: {
+    fontFamily: fonts.bold,
     color: colors.textMuted,
     fontSize: 13,
     fontWeight: '700',
@@ -141,8 +191,52 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
-  rowLabel: { color: colors.text, fontSize: 16, fontWeight: '600' },
-  rowHint: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
+  rowLabel: {
+    fontFamily: fonts.semibold,
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  rowHint: {
+    fontFamily: fonts.regular,
+    color: colors.textMuted,
+    fontSize: 12,
+    marginTop: 2,
+  },
+  stepper: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  stepBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.surfaceElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  stepBtnText: { color: colors.text, fontSize: 18, fontWeight: '700' },
+  stepValue: {
+    fontFamily: fonts.bold,
+    color: colors.cream,
+    fontSize: 16,
+    fontWeight: '700',
+    minWidth: 24,
+    textAlign: 'center',
+  },
+  gridBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  gridBtnText: {
+    fontFamily: fonts.bold,
+    color: colors.mint,
+    fontSize: 13,
+    fontWeight: '700',
+  },
   langRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -151,9 +245,25 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
-  langLabel: { flex: 1, color: colors.text, fontSize: 16, fontWeight: '600' },
+  langLabel: {
+    flex: 1,
+    fontFamily: fonts.semibold,
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: '600',
+  },
   check: { color: colors.mint, fontSize: 18, fontWeight: '800' },
-  stubNote: { color: colors.textMuted, fontSize: 12, marginTop: 8 },
+  stubNote: {
+    fontFamily: fonts.regular,
+    color: colors.textMuted,
+    fontSize: 12,
+    marginTop: 8,
+  },
   reset: { marginTop: 32, alignItems: 'center', padding: 12 },
-  resetText: { color: colors.danger, fontSize: 15, fontWeight: '700' },
+  resetText: {
+    fontFamily: fonts.bold,
+    color: colors.danger,
+    fontSize: 15,
+    fontWeight: '700',
+  },
 });

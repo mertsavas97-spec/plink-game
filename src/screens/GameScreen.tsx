@@ -1,13 +1,22 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BoardView } from '../components/BoardView';
+import {
+  IconClose,
+  IconHint,
+  IconPause,
+  IconRedo,
+  IconSettings,
+  IconUndo,
+} from '../components/Icons';
 import { PillButton } from '../components/PillButton';
 import { useApp } from '../context/AppContext';
 import { BOARD_PRESETS, GameEngine, clusterScore, type Position } from '../engine';
 import type { RootStackParamList } from '../navigation/types';
 import { colors } from '../theme/colors';
+import { fonts } from '../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Game'>;
 
@@ -34,10 +43,14 @@ export function GameScreen({ navigation, route }: Props) {
   const { settings, highScore, recordScore } = useApp();
 
   const engineRef = useRef(
-    new GameEngine({
-      colorCount,
-      boardSize: BOARD_PRESETS[boardPreset],
-    }),
+    new GameEngine(
+      {
+        colorCount,
+        boardSize: BOARD_PRESETS[boardPreset],
+      },
+      Date.now(),
+      settings.undoLimit,
+    ),
   );
 
   const [tick, setTick] = useState(0);
@@ -53,6 +66,10 @@ export function GameScreen({ navigation, route }: Props) {
     void tick;
     return engine.getSnapshot();
   }, [engine, tick]);
+
+  useEffect(() => {
+    engine.setUndoLimit(settings.undoLimit);
+  }, [engine, settings.undoLimit]);
 
   useEffect(() => {
     if (paused || snap.status !== 'playing') return;
@@ -115,15 +132,23 @@ export function GameScreen({ navigation, route }: Props) {
   };
 
   const onRestart = () => {
-    engineRef.current = new GameEngine({
-      colorCount,
-      boardSize: BOARD_PRESETS[boardPreset],
-    });
+    engineRef.current = new GameEngine(
+      {
+        colorCount,
+        boardSize: BOARD_PRESETS[boardPreset],
+      },
+      Date.now(),
+      settings.undoLimit,
+    );
     endingRef.current = false;
     setSelected(null);
     setHint(null);
     setPaused(false);
     bump();
+  };
+
+  const exitToMenu = () => {
+    navigation.popToTop();
   };
 
   const onUndo = () => {
@@ -150,15 +175,16 @@ export function GameScreen({ navigation, route }: Props) {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.topBar}>
-        <View>
+        <Pressable onPress={exitToMenu} style={styles.iconBtn} accessibilityLabel="Exit">
+          <IconClose />
+        </Pressable>
+        <View style={styles.scoreCenter}>
           <Text style={styles.scoreLabel}>Score</Text>
           <Text style={styles.score}>{formatScore(snap.score)}</Text>
-        </View>
-        <View style={styles.timerBox}>
           <Text style={styles.timer}>{formatTime(snap.elapsedMs)}</Text>
         </View>
-        <Pressable onPress={onPause} style={styles.pauseBtn} accessibilityLabel="Pause">
-          <Text style={styles.pauseIcon}>❚❚</Text>
+        <Pressable onPress={onPause} style={styles.iconBtn} accessibilityLabel="Pause">
+          <IconPause />
         </Pressable>
       </View>
 
@@ -182,9 +208,15 @@ export function GameScreen({ navigation, route }: Props) {
       </View>
 
       <View style={styles.controls}>
-        <ControlButton label="Undo" disabled={!engine.canUndo()} onPress={onUndo} />
-        <ControlButton label="Redo" disabled={!engine.canRedo()} onPress={onRedo} />
-        <ControlButton label="Hint" onPress={onHint} />
+        <IconControl label="Undo" disabled={!engine.canUndo()} onPress={onUndo}>
+          <IconUndo color={engine.canUndo() ? colors.text : colors.textMuted} />
+        </IconControl>
+        <IconControl label="Redo" disabled={!engine.canRedo()} onPress={onRedo}>
+          <IconRedo color={engine.canRedo() ? colors.text : colors.textMuted} />
+        </IconControl>
+        <IconControl label="Hint" onPress={onHint}>
+          <IconHint />
+        </IconControl>
       </View>
 
       {paused ? (
@@ -196,13 +228,10 @@ export function GameScreen({ navigation, route }: Props) {
             <PillButton
               label="Settings"
               variant="secondary"
+              icon={<IconSettings size={18} />}
               onPress={() => navigation.navigate('Settings')}
             />
-            <PillButton
-              label="Main Menu"
-              variant="ghost"
-              onPress={() => navigation.popToTop()}
-            />
+            <PillButton label="Main Menu" variant="ghost" onPress={exitToMenu} />
           </View>
         </View>
       ) : null}
@@ -210,22 +239,25 @@ export function GameScreen({ navigation, route }: Props) {
   );
 }
 
-function ControlButton({
+function IconControl({
   label,
   onPress,
   disabled,
+  children,
 }: {
   label: string;
   onPress: () => void;
   disabled?: boolean;
+  children: ReactNode;
 }) {
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
+      accessibilityLabel={label}
       style={[styles.controlBtn, disabled && styles.controlDisabled]}
     >
-      <Text style={styles.controlLabel}>{label}</Text>
+      {children}
     </Pressable>
   );
 }
@@ -236,20 +268,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingTop: 4,
     paddingBottom: 8,
   },
-  scoreLabel: { color: colors.textMuted, fontSize: 12, fontWeight: '600' },
-  score: { color: colors.text, fontSize: 28, fontWeight: '800' },
-  timerBox: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: colors.surface,
-  },
-  timer: { color: colors.cream, fontSize: 16, fontWeight: '700', fontVariant: ['tabular-nums'] },
-  pauseBtn: {
+  iconBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -257,15 +280,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pauseIcon: { color: colors.text, fontSize: 14, fontWeight: '700' },
+  scoreCenter: { alignItems: 'center' },
+  scoreLabel: {
+    fontFamily: fonts.semibold,
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  score: {
+    fontFamily: fonts.extrabold,
+    color: colors.text,
+    fontSize: 28,
+    fontWeight: '800',
+  },
+  timer: {
+    fontFamily: fonts.bold,
+    color: colors.cream,
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 2,
+    fontVariant: ['tabular-nums'],
+  },
   boardWrap: { flex: 1, justifyContent: 'center', gap: 10 },
   preview: {
+    fontFamily: fonts.bold,
     textAlign: 'center',
     color: colors.mint,
     fontSize: 14,
     fontWeight: '700',
   },
   previewMuted: {
+    fontFamily: fonts.regular,
     textAlign: 'center',
     color: colors.textMuted,
     fontSize: 13,
@@ -273,22 +318,21 @@ const styles = StyleSheet.create({
   controls: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 12,
+    gap: 18,
     paddingBottom: 20,
     paddingHorizontal: 20,
   },
   controlBtn: {
-    minWidth: 88,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 999,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
     borderColor: colors.border,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   controlDisabled: { opacity: 0.35 },
-  controlLabel: { color: colors.text, fontWeight: '700', fontSize: 14 },
   overlay: {
     ...StyleSheet.absoluteFill,
     backgroundColor: colors.overlay,
@@ -307,6 +351,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   pausedTitle: {
+    fontFamily: fonts.extrabold,
     color: colors.text,
     fontSize: 28,
     fontWeight: '800',

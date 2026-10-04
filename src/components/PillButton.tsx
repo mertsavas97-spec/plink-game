@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { type ReactNode } from 'react';
 import {
   Pressable,
   StyleSheet,
   Text,
+  View,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
 import { colors } from '../theme/colors';
+import { fonts } from '../theme/typography';
 
 type Variant = 'primary' | 'secondary' | 'mint' | 'ghost' | 'danger';
 
@@ -16,6 +18,7 @@ interface Props {
   variant?: Variant;
   style?: StyleProp<ViewStyle>;
   disabled?: boolean;
+  icon?: ReactNode;
 }
 
 export function PillButton({
@@ -24,6 +27,7 @@ export function PillButton({
   variant = 'primary',
   style,
   disabled,
+  icon,
 }: Props) {
   return (
     <Pressable
@@ -38,7 +42,10 @@ export function PillButton({
         style,
       ]}
     >
-      <Text style={[styles.label, labelStyles[variant]]}>{label}</Text>
+      <View style={styles.inner}>
+        {icon}
+        <Text style={[styles.label, labelStyles[variant]]}>{label}</Text>
+      </View>
     </Pressable>
   );
 }
@@ -51,9 +58,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  inner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   pressed: { opacity: 0.88, transform: [{ scale: 0.985 }] },
   disabled: { opacity: 0.4 },
   label: {
+    fontFamily: fonts.bold,
     fontSize: 17,
     fontWeight: '700',
     letterSpacing: 0.2,

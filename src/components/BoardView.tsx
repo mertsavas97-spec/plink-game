@@ -26,6 +26,7 @@ export function BoardView({
   const { width: screenW, height: screenH } = useWindowDimensions();
   const cols = board.length;
   const rows = board[0]?.length ?? 0;
+  const hasSelection = selected.size > 0 || (hintKeys != null && hintKeys.size > 0);
 
   const tileSize = useMemo(() => {
     const maxW = screenW - 32;
@@ -57,14 +58,15 @@ export function BoardView({
               );
             }
             const key = posKey(col, row);
-            const isSelected = selected.has(key);
-            const isHint = hintKeys?.has(key) ?? false;
+            const isSelected = selected.has(key) || (hintKeys?.has(key) ?? false);
             return (
               <Tile
                 key={key}
                 colorId={cell}
                 size={tileSize}
-                selected={isSelected || isHint}
+                selected={isSelected}
+                contourEdge={isSelected}
+                dimmed={hasSelection && !isSelected}
                 showLetter={showLetters}
                 onPress={() => onTilePress({ col, row })}
               />

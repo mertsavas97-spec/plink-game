@@ -5,3 +5,10 @@ export const fonts = {
   bold: 'Inter_700Bold',
   extrabold: 'Inter_800ExtraBold',
 } as const;
+
+export const text = {
+  body: { fontFamily: fonts.regular },
+  semibold: { fontFamily: fonts.semibold },
+  bold: { fontFamily: fonts.bold },
+  extrabold: { fontFamily: fonts.extrabold },
+} as const;

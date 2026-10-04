@@ -2,9 +2,11 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { IconTrophy } from '../components/Icons';
 import { PillButton } from '../components/PillButton';
 import type { RootStackParamList } from '../navigation/types';
 import { colors } from '../theme/colors';
+import { fonts } from '../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GameOver'>;
 
@@ -18,9 +20,15 @@ export function GameOverScreen({ navigation, route }: Props) {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.content}>
-        <Text style={styles.trophy}>{won ? '★' : '◆'}</Text>
+        <View style={styles.trophyWrap}>
+          <IconTrophy size={72} color={colors.gold} />
+        </View>
         <Text style={styles.title}>{won ? 'Board Cleared!' : 'No Moves Left'}</Text>
-        {isNewHigh ? <Text style={styles.newHigh}>New High Score!</Text> : null}
+        {isNewHigh ? (
+          <View style={styles.badge}>
+            <Text style={styles.newHigh}>New High Score!</Text>
+          </View>
+        ) : null}
 
         <View style={styles.card}>
           <Text style={styles.meta}>Score</Text>
@@ -50,9 +58,37 @@ export function GameOverScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: 24 },
   content: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
-  trophy: { color: colors.gold, fontSize: 64, marginBottom: 4 },
-  title: { color: colors.text, fontSize: 30, fontWeight: '800' },
-  newHigh: { color: colors.gold, fontSize: 16, fontWeight: '700' },
+  trophyWrap: {
+    width: 112,
+    height: 112,
+    borderRadius: 56,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  title: {
+    fontFamily: fonts.extrabold,
+    color: colors.text,
+    fontSize: 30,
+    fontWeight: '800',
+  },
+  badge: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: 'rgba(232,197,71,0.15)',
+    borderWidth: 1,
+    borderColor: colors.gold,
+  },
+  newHigh: {
+    fontFamily: fonts.bold,
+    color: colors.gold,
+    fontSize: 14,
+    fontWeight: '700',
+  },
   card: {
     marginTop: 16,
     width: '100%',
@@ -63,9 +99,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  meta: { color: colors.textMuted, fontSize: 13, fontWeight: '600' },
-  score: { color: colors.text, fontSize: 40, fontWeight: '800', marginTop: 4 },
-  best: { color: colors.gold, fontSize: 28, fontWeight: '800', marginTop: 4 },
+  meta: {
+    fontFamily: fonts.semibold,
+    color: colors.textMuted,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  score: {
+    fontFamily: fonts.extrabold,
+    color: colors.text,
+    fontSize: 40,
+    fontWeight: '800',
+    marginTop: 4,
+  },
+  best: {
+    fontFamily: fonts.extrabold,
+    color: colors.gold,
+    fontSize: 28,
+    fontWeight: '800',
+    marginTop: 4,
+  },
   divider: {
     height: 1,
     alignSelf: 'stretch',

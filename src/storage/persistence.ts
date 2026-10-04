@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { BoardPreset } from '../engine';
 
 const KEYS = {
   highScore: '@plink/highScore',
@@ -11,6 +12,10 @@ export interface Settings {
   vibrationEnabled: boolean;
   language: string;
   showTileLetters: boolean;
+  /** Max undo steps retained (moodboard Settings inventory). */
+  undoLimit: number;
+  /** Preferred board size for New Game default. */
+  defaultBoardPreset: BoardPreset;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -18,6 +23,8 @@ export const DEFAULT_SETTINGS: Settings = {
   vibrationEnabled: true,
   language: 'en',
   showTileLetters: true,
+  undoLimit: 3,
+  defaultBoardPreset: '12x14',
 };
 
 export async function getHighScore(): Promise<number> {

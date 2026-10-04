@@ -39,15 +39,20 @@ export class GameEngine {
   private pauseStartedAt: number | null = null;
   private status: GameStatus = 'playing';
   private config: GameConfig;
-  private history = new HistoryStack();
+  private history: HistoryStack;
   private endBonusesApplied = false;
   private frozenElapsedMs: number | null = null;
 
-  constructor(config: GameConfig, nowMs = Date.now()) {
+  constructor(config: GameConfig, nowMs = Date.now(), undoLimit: number | null = null) {
     this.config = config;
     this.board = createBoard(config);
     this.startedAtMs = nowMs;
+    this.history = new HistoryStack(undoLimit);
     this.status = resolveStatus(this.board);
+  }
+
+  setUndoLimit(limit: number | null): void {
+    this.history.setMaxPast(limit);
   }
 
   static fromSnapshot(snap: GameSnapshot): GameEngine {

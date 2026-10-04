@@ -4,17 +4,26 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BOARD_PRESETS, COLOR_COUNT_LABELS, type BoardPreset, type ColorCount } from '../engine';
 import { PillButton } from '../components/PillButton';
+import { useApp } from '../context/AppContext';
 import type { RootStackParamList } from '../navigation/types';
 import { colors } from '../theme/colors';
+import { fonts } from '../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'NewGame'>;
 
 const COLOR_OPTIONS: ColorCount[] = [3, 4, 5];
 const SIZE_OPTIONS: BoardPreset[] = ['10x10', '12x14', '16x18'];
 
+const DIFFICULTY_COLOR: Record<ColorCount, string> = {
+  3: colors.difficulty.easy,
+  4: colors.difficulty.medium,
+  5: colors.difficulty.hard,
+};
+
 export function NewGameScreen({ navigation }: Props) {
+  const { settings } = useApp();
   const [colorCount, setColorCount] = useState<ColorCount>(4);
-  const [boardPreset, setBoardPreset] = useState<BoardPreset>('12x14');
+  const [boardPreset, setBoardPreset] = useState<BoardPreset>(settings.defaultBoardPreset);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -29,14 +38,21 @@ export function NewGameScreen({ navigation }: Props) {
       <View style={styles.colorRow}>
         {COLOR_OPTIONS.map((n) => {
           const active = n === colorCount;
+          const accent = DIFFICULTY_COLOR[n];
           return (
             <Pressable
               key={n}
               onPress={() => setColorCount(n)}
-              style={[styles.colorCircle, active && styles.colorCircleActive]}
+              style={[
+                styles.colorCircle,
+                { borderColor: active ? accent : colors.border },
+                active && { backgroundColor: `${accent}22` },
+              ]}
             >
-              <Text style={[styles.colorNum, active && styles.colorNumActive]}>{n}</Text>
-              <Text style={[styles.colorLabel, active && styles.colorLabelActive]}>
+              <Text style={[styles.colorNum, { color: accent, opacity: active ? 1 : 0.55 }]}>
+                {n}
+              </Text>
+              <Text style={[styles.colorLabel, { color: active ? colors.text : accent, opacity: active ? 1 : 0.7 }]}>
                 {COLOR_COUNT_LABELS[n]}
               </Text>
             </Pressable>
@@ -45,18 +61,20 @@ export function NewGameScreen({ navigation }: Props) {
       </View>
 
       <Text style={styles.section}>Board Size</Text>
-      <View style={styles.sizeCol}>
+      <View style={styles.sizeRow}>
         {SIZE_OPTIONS.map((preset) => {
           const size = BOARD_PRESETS[preset];
           const active = preset === boardPreset;
+          const cells = preset === '10x10' ? 9 : preset === '12x14' ? 16 : 25;
+          const dim = Math.round(Math.sqrt(cells));
           return (
             <Pressable
               key={preset}
               onPress={() => setBoardPreset(preset)}
-              style={[styles.sizeCard, active && styles.sizeCardActive]}
+              style={[styles.sizePill, active && styles.sizePillActive]}
             >
-              <View style={styles.miniGrid}>
-                {Array.from({ length: 9 }).map((_, i) => (
+              <View style={[styles.miniGrid, { width: dim * 7 + (dim - 1) * 2 }]}>
+                {Array.from({ length: cells }).map((_, i) => (
                   <View
                     key={i}
                     style={[
@@ -66,10 +84,10 @@ export function NewGameScreen({ navigation }: Props) {
                   />
                 ))}
               </View>
-              <View>
-                <Text style={styles.sizeLabel}>{size.label}</Text>
-                <Text style={styles.sizeMeta}>{size.tileCount} tiles</Text>
-              </View>
+              <Text style={[styles.sizeLabel, active && styles.sizeLabelActive]}>
+                {size.label}
+              </Text>
+              <Text style={styles.sizeMeta}>{size.tileCount}</Text>
             </Pressable>
           );
         })}
@@ -89,10 +107,28 @@ export function NewGameScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: 24 },
   back: { paddingVertical: 8, alignSelf: 'flex-start' },
-  backText: { color: colors.textMuted, fontSize: 16, fontWeight: '600' },
-  title: { color: colors.text, fontSize: 32, fontWeight: '800', marginTop: 8 },
-  subtitle: { color: colors.textMuted, fontSize: 15, marginTop: 4, marginBottom: 28 },
+  backText: {
+    fontFamily: fonts.semibold,
+    color: colors.textMuted,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  title: {
+    fontFamily: fonts.extrabold,
+    color: colors.text,
+    fontSize: 32,
+    fontWeight: '800',
+    marginTop: 8,
+  },
+  subtitle: {
+    fontFamily: fonts.regular,
+    color: colors.textMuted,
+    fontSize: 15,
+    marginTop: 4,
+    marginBottom: 28,
+  },
   section: {
+    fontFamily: fonts.bold,
     color: colors.text,
     fontSize: 14,
     fontWeight: '700',
@@ -107,41 +143,50 @@ const styles = StyleSheet.create({
     maxHeight: 110,
     borderRadius: 999,
     backgroundColor: colors.surface,
-    borderWidth: 2,
-    borderColor: colors.border,
+    borderWidth: 3,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
   },
-  colorCircleActive: {
-    borderColor: colors.cream,
-    backgroundColor: colors.surfaceElevated,
+  colorNum: { fontFamily: fonts.extrabold, fontSize: 28, fontWeight: '800' },
+  colorLabel: {
+    fontFamily: fonts.semibold,
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: '600',
   },
-  colorNum: { color: colors.textMuted, fontSize: 28, fontWeight: '800' },
-  colorNumActive: { color: colors.cream },
-  colorLabel: { color: colors.textMuted, fontSize: 12, fontWeight: '600' },
-  colorLabelActive: { color: colors.text },
-  sizeCol: { gap: 10, flex: 1 },
-  sizeCard: {
-    flexDirection: 'row',
+  sizeRow: { flexDirection: 'row', gap: 10, flex: 1, alignItems: 'flex-start' },
+  sizePill: {
+    flex: 1,
     alignItems: 'center',
-    gap: 16,
-    padding: 16,
-    borderRadius: 16,
+    gap: 8,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+    borderRadius: 20,
     backgroundColor: colors.surface,
     borderWidth: 2,
     borderColor: colors.border,
   },
-  sizeCardActive: { borderColor: colors.mint },
+  sizePillActive: { borderColor: colors.mint, backgroundColor: colors.surfaceElevated },
   miniGrid: {
-    width: 36,
-    height: 36,
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 2,
+    justifyContent: 'center',
   },
-  miniCell: { width: 10, height: 10, borderRadius: 2 },
-  sizeLabel: { color: colors.text, fontSize: 18, fontWeight: '700' },
-  sizeMeta: { color: colors.textMuted, fontSize: 13, marginTop: 2 },
+  miniCell: { width: 7, height: 7, borderRadius: 1.5 },
+  sizeLabel: {
+    fontFamily: fonts.bold,
+    color: colors.textMuted,
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  sizeLabelActive: { color: colors.text },
+  sizeMeta: {
+    fontFamily: fonts.regular,
+    color: colors.textMuted,
+    fontSize: 11,
+  },
   footer: { paddingBottom: 16, paddingTop: 8 },
 });
