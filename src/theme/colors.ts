@@ -1,6 +1,10 @@
 /** Moodboard palette + UI tokens for PLINK. All screens should import from here. */
 export const colors = {
-  bg: '#0A0E17',
+  /** Flat fallback; prefer ScreenBackground gradient */
+  bg: '#0A0E18',
+  bgGradient: ['#0A0F1C', '#0B1220', '#0A0E18'] as const,
+  glowBlue: 'rgba(45, 120, 240, 0.14)',
+  glowMagenta: 'rgba(226, 24, 192, 0.12)',
   /** Board panel / secondary button fill */
   surface: '#111B2E',
   surfaceElevated: '#182338',
@@ -18,33 +22,34 @@ export const colors = {
   selection: '#FFFFFF',
   overlay: 'rgba(6, 10, 18, 0.82)',
   difficulty: {
-    easy: '#2DB8C8', // blue/teal
-    medium: '#2DF3E5', // cyan
-    hard: '#F35A5A', // red
+    easy: '#2DB8C8',
+    medium: '#5BC4E8',
+    hard: '#E83356',
   },
-  /** Tile base hues (P/L/I/N/K logo maps to A–E) */
+  /**
+   * Tile hues eyedropped toward moodboard:
+   * royal blue / scarlet / magenta / amber / sky-cyan (not neon mint).
+   */
   tile: {
-    A: '#2D7CF3', // blue — P
-    B: '#F32D5E', // red — L
-    C: '#E91EC8', // pink — I
-    D: '#F3C72D', // yellow — N
-    E: '#2DF3E5', // cyan — K
+    A: '#2F78F0',
+    B: '#E83356',
+    C: '#E218C0',
+    D: '#F0C12E',
+    E: '#5BC4E8',
   },
-  /** Lighter top stops for vertical gradients */
   tileLight: {
-    A: '#5BA0FF',
-    B: '#FF5A82',
-    C: '#FF4ADB',
-    D: '#FFDB5A',
-    E: '#6AFFF3',
+    A: '#5A9BFF',
+    B: '#FF5F7E',
+    C: '#FF4AD8',
+    D: '#FFE066',
+    E: '#8DD9F2',
   },
-  /** Deeper bottom stops / bevel */
   tileDark: {
-    A: '#1A4FA8',
-    B: '#B01A3F',
-    C: '#A0128A',
-    D: '#B08A12',
-    E: '#12998E',
+    A: '#1A4DB5',
+    B: '#A81F3A',
+    C: '#9A0F82',
+    D: '#B08912',
+    E: '#2E8AAD',
   },
 } as const;
 

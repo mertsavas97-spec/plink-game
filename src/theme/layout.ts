@@ -1,37 +1,42 @@
-/** Shared layout / component size tokens — no magic numbers in screens. */
+/** Shared layout / component size tokens — 8pt grid. No magic numbers in screens. */
 export const layout = {
-  screenPad: 22,
-  sectionGap: 14,
-  minTile: 30,
+  /** General screen horizontal padding (20–24) */
+  screenPad: 20,
+  /** Board panel must keep 16px horizontal screen margin */
+  boardScreenMargin: 16,
+  sectionGap: 16,
+  minTile: 24,
   comfortTile: 40,
-  maxTile: 68,
-  /** Letter as fraction of tile edge (~55% per polish spec). */
+  maxTile: 72,
+  /** Letter as fraction of tile edge */
   letterScale: 0.55,
-  /** Gap as fraction of tile size (3–4%). */
-  tileGapRatio: 0.035,
+  /** Gap as fraction of tile size (~6%) */
+  tileGapRatio: 0.06,
   boardPad: 8,
   boardRadius: 16,
-  chromeTop: 52,
+  chromeTop: 56,
   chromeBottom: 80,
   /** Tile corner radius as fraction of size */
   tileRadiusRatio: 0.22,
-  /** Bottom bevel height in px range (clamped in Tile) */
-  tileBevelMin: 4,
-  tileBevelMax: 6,
-  tileHighlightOpacity: 0.25,
-  tileHighlightHeightRatio: 0.35,
+  /** Bottom bevel ~8% of tile */
+  tileBevelRatio: 0.08,
+  tileHighlightOpacity: 0.28,
+  /** Soft glossy highlight occupies upper ~40% */
+  tileHighlightHeightRatio: 0.4,
   tileSelectedScale: 1.04,
+  tileSelectedPulseMs: 900,
   tileShadowOpacity: 0.35,
-  tileShadowRadius: 6,
-  tileShadowOffsetY: 3,
-  tileElevation: 5,
+  tileShadowRadius: 8,
+  tileShadowOffsetY: 4,
+  tileElevation: 6,
   /** Buttons — rounded rect, not pills */
-  buttonHeight: 50,
+  buttonHeight: 52,
   buttonRadius: 12,
-  buttonPadH: 18,
+  buttonPadH: 20,
   buttonIconGap: 12,
   buttonLabelSize: 16,
   listButtonHeight: 52,
+  iconBtn: 44,
   taglineSize: 12,
   taglineTracking: 1.8,
   logoTile: {
@@ -46,6 +51,14 @@ export const layout = {
   },
   modalRadius: 16,
   modalMaxWidth: 300,
-  modalPad: 22,
+  modalPad: 24,
   controlLabelSize: 11,
+  /** Onboarding fixed slots */
+  onboardingDemoTile: 44,
+  onboardingDemoCols: 4,
+  onboardingDemoRows: 4,
+  onboardingIllustrationH: 280,
+  onboardingHand: 36,
+  labelTracking: 1.8,
+  titleTracking: -0.3,
 } as const;

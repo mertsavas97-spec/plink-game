@@ -15,12 +15,13 @@ import {
   IconSettings,
   IconUndo,
 } from '../components/Icons';
+import { ScreenBackground } from '../components/ScreenBackground';
 import { useApp } from '../context/AppContext';
 import { BOARD_PRESETS, GameEngine, clusterScore, type Position } from '../engine';
 import type { RootStackParamList } from '../navigation/types';
 import { colors } from '../theme/colors';
 import { layout } from '../theme/layout';
-import { fonts } from '../theme/typography';
+import { fonts, typeScale } from '../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Game'>;
 
@@ -167,89 +168,91 @@ export function GameScreen({ navigation, route }: Props) {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
-      <View style={styles.topBar}>
-        <View style={styles.sideSlot} />
-        <View style={styles.scoreCenter}>
-          <Text style={styles.scoreLabel}>Score</Text>
-          <Text style={styles.score}>{formatScore(snap.score)}</Text>
-        </View>
-        <Pressable onPress={onPause} style={styles.iconBtn} accessibilityLabel="Pause">
-          <IconPause />
-        </Pressable>
-      </View>
-
-      <View style={styles.boardWrap}>
-        <BoardView
-          board={snap.board}
-          selected={toKeySet(selected)}
-          hintKeys={toKeySet(hint)}
-          showLetters={settings.showTileLetters}
-          onTilePress={onTilePress}
-        />
-        {selected && selected.length > 2 ? (
-          <Text style={styles.preview}>
-            Clear {selected.length} → +{formatScore(clusterScore(selected.length, colorCount))}
-          </Text>
-        ) : selected && selected.length === 2 ? (
-          <Text style={styles.previewMuted}>Size 2 clears but scores 0</Text>
-        ) : null}
-      </View>
-
-      <View style={styles.controls}>
-        <IconControl
-          label="Undo"
-          disabled={!engine.canUndo()}
-          onPress={onUndo}
-        >
-          <IconUndo color={engine.canUndo() ? colors.text : colors.textMuted} />
-        </IconControl>
-        <IconControl
-          label="Redo"
-          disabled={!engine.canRedo()}
-          onPress={onRedo}
-        >
-          <IconRedo color={engine.canRedo() ? colors.text : colors.textMuted} />
-        </IconControl>
-        <IconControl label="Hint" onPress={onHint}>
-          <IconHint color={colors.cream} />
-        </IconControl>
-      </View>
-
-      {paused ? (
-        <View style={styles.overlay}>
-          <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
-          <View style={styles.dim} />
-          <View style={styles.modal}>
-            <Text style={styles.pausedTitle}>Paused</Text>
-            <AppButton
-              label="Resume"
-              variant="primary"
-              icon={<IconPlay size={18} color={colors.textDark} />}
-              onPress={onResume}
-            />
-            <AppButton
-              label="Restart"
-              variant="secondary"
-              icon={<IconRestart />}
-              onPress={onRestart}
-            />
-            <AppButton
-              label="Settings"
-              variant="secondary"
-              icon={<IconSettings size={18} />}
-              onPress={() => navigation.navigate('Settings')}
-            />
-            <AppButton
-              label="Main Menu"
-              variant="ghost"
-              icon={<IconHome />}
-              onPress={exitToMenu}
-            />
+    <ScreenBackground>
+      <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
+        <View style={styles.topBar}>
+          <View style={styles.sideSlot} />
+          <View style={styles.scoreCenter}>
+            <Text style={styles.scoreLabel}>Score</Text>
+            <Text style={styles.score}>{formatScore(snap.score)}</Text>
           </View>
+          <Pressable onPress={onPause} style={styles.iconBtn} accessibilityLabel="Pause">
+            <IconPause />
+          </Pressable>
         </View>
-      ) : null}
-    </SafeAreaView>
+
+        <View style={styles.boardWrap}>
+          <BoardView
+            board={snap.board}
+            selected={toKeySet(selected)}
+            hintKeys={toKeySet(hint)}
+            showLetters={settings.showTileLetters}
+            onTilePress={onTilePress}
+          />
+          {selected && selected.length > 2 ? (
+            <Text style={styles.preview}>
+              Clear {selected.length} → +{formatScore(clusterScore(selected.length, colorCount))}
+            </Text>
+          ) : selected && selected.length === 2 ? (
+            <Text style={styles.previewMuted}>Size 2 clears but scores 0</Text>
+          ) : null}
+        </View>
+
+        <View style={styles.controls}>
+          <IconControl
+            label="Undo"
+            disabled={!engine.canUndo()}
+            onPress={onUndo}
+          >
+            <IconUndo color={engine.canUndo() ? colors.text : colors.textMuted} />
+          </IconControl>
+          <IconControl
+            label="Redo"
+            disabled={!engine.canRedo()}
+            onPress={onRedo}
+          >
+            <IconRedo color={engine.canRedo() ? colors.text : colors.textMuted} />
+          </IconControl>
+          <IconControl label="Hint" onPress={onHint}>
+            <IconHint color={colors.cream} />
+          </IconControl>
+        </View>
+
+        {paused ? (
+          <View style={styles.overlay}>
+            <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
+            <View style={styles.dim} />
+            <View style={styles.modal}>
+              <Text style={styles.pausedTitle}>Paused</Text>
+              <AppButton
+                label="Resume"
+                variant="primary"
+                icon={<IconPlay size={18} color={colors.textDark} />}
+                onPress={onResume}
+              />
+              <AppButton
+                label="Restart"
+                variant="secondary"
+                icon={<IconRestart />}
+                onPress={onRestart}
+              />
+              <AppButton
+                label="Settings"
+                variant="secondary"
+                icon={<IconSettings size={18} />}
+                onPress={() => navigation.navigate('Settings')}
+              />
+              <AppButton
+                label="Main Menu"
+                variant="ghost"
+                icon={<IconHome />}
+                onPress={exitToMenu}
+              />
+            </View>
+          </View>
+        ) : null}
+      </SafeAreaView>
+    </ScreenBackground>
   );
 }
 
@@ -280,7 +283,7 @@ function IconControl({
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
+  safe: { flex: 1 },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -288,12 +291,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: layout.screenPad,
     paddingTop: 2,
     paddingBottom: 6,
-    minHeight: 56,
+    minHeight: layout.chromeTop,
   },
-  sideSlot: { width: 46 },
+  sideSlot: { width: layout.iconBtn },
   iconBtn: {
-    width: 46,
-    height: 46,
+    width: layout.iconBtn,
+    height: layout.iconBtn,
     borderRadius: layout.buttonRadius,
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -303,20 +306,21 @@ const styles = StyleSheet.create({
   },
   scoreCenter: { alignItems: 'center', flex: 1 },
   scoreLabel: {
-    fontFamily: fonts.semibold,
+    ...typeScale.label,
+    fontSize: 11,
+    letterSpacing: 1.5,
     color: colors.textMuted,
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 0.5,
   },
   score: {
-    fontFamily: fonts.extrabold,
+    ...typeScale.score,
     color: colors.text,
-    fontSize: 32,
-    fontWeight: '800',
-    letterSpacing: -0.5,
   },
-  boardWrap: { flex: 1, justifyContent: 'center', gap: 10, paddingHorizontal: 4 },
+  boardWrap: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 10,
+  },
   preview: {
     fontFamily: fonts.bold,
     textAlign: 'center',
@@ -336,8 +340,8 @@ const styles = StyleSheet.create({
     gap: 22,
     paddingBottom: 14,
     paddingTop: 4,
-    paddingHorizontal: 20,
-    minHeight: 76,
+    paddingHorizontal: layout.screenPad,
+    minHeight: layout.chromeBottom,
   },
   controlBtn: {
     minWidth: 64,
@@ -376,10 +380,8 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   pausedTitle: {
-    fontFamily: fonts.extrabold,
+    ...typeScale.title,
     color: colors.text,
-    fontSize: 26,
-    fontWeight: '800',
     textAlign: 'center',
     marginBottom: 8,
   },

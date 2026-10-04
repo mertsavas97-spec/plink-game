@@ -11,10 +11,11 @@ import { AppButton } from '../components/AppButton';
 import { Card } from '../components/Card';
 import { Confetti } from '../components/Confetti';
 import { IconCrown, IconHappy, IconPlay, IconTrophy } from '../components/Icons';
+import { ScreenBackground } from '../components/ScreenBackground';
 import type { RootStackParamList } from '../navigation/types';
 import { colors } from '../theme/colors';
 import { layout } from '../theme/layout';
-import { fonts } from '../theme/typography';
+import { fonts, typeScale } from '../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GameOver'>;
 
@@ -35,54 +36,56 @@ export function GameOverScreen({ navigation, route }: Props) {
   }));
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <Confetti />
-      <View style={styles.content}>
-        <Animated.View style={[styles.iconWrap, iconStyle]}>
-          {won ? (
-            <IconTrophy size={72} color={colors.gold} />
-          ) : (
-            <IconHappy size={72} color={colors.gold} />
-          )}
-        </Animated.View>
-        <Text style={styles.title}>{won ? 'Board Cleared!' : 'Game Over'}</Text>
-        {isNewHigh ? (
-          <View style={styles.badge}>
-            <IconCrown size={16} />
-            <Text style={styles.newHigh}>New High Score!</Text>
-          </View>
-        ) : null}
+    <ScreenBackground showDecorTiles>
+      <SafeAreaView style={styles.safe}>
+        {/* Confetti behind all result chrome */}
+        <Confetti />
+        <View style={styles.content}>
+          <Animated.View style={[styles.iconWrap, iconStyle]}>
+            {won ? (
+              <IconTrophy size={72} color={colors.gold} />
+            ) : (
+              <IconHappy size={72} color={colors.gold} />
+            )}
+          </Animated.View>
+          <Text style={styles.title}>{won ? 'Board Cleared!' : 'Game Over'}</Text>
+          {isNewHigh ? (
+            <View style={styles.badge}>
+              <IconCrown size={16} />
+              <Text style={styles.newHigh}>New High Score!</Text>
+            </View>
+          ) : null}
 
-        <Card style={styles.card}>
-          <Text style={styles.meta}>Score</Text>
-          <Text style={styles.score}>{formatScore(score)}</Text>
-          <View style={styles.divider} />
-          <Text style={styles.meta}>Best</Text>
-          <Text style={styles.best}>{formatScore(best)}</Text>
-        </Card>
-      </View>
+          <Card style={styles.card}>
+            <Text style={styles.meta}>Score</Text>
+            <Text style={styles.score}>{formatScore(score)}</Text>
+            <View style={styles.divider} />
+            <Text style={styles.meta}>Best</Text>
+            <Text style={styles.best}>{formatScore(best)}</Text>
+          </Card>
+        </View>
 
-      <View style={styles.footer}>
-        <AppButton
-          label="Play Again"
-          variant="primary"
-          icon={<IconPlay size={18} color={colors.textDark} />}
-          onPress={() => navigation.replace('Game', { colorCount, boardPreset })}
-        />
-        <AppButton
-          label="Main Menu"
-          variant="secondary"
-          onPress={() => navigation.popToTop()}
-        />
-      </View>
-    </SafeAreaView>
+        <View style={styles.footer}>
+          <AppButton
+            label="Play Again"
+            variant="primary"
+            icon={<IconPlay size={18} color={colors.textDark} />}
+            onPress={() => navigation.replace('Game', { colorCount, boardPreset })}
+          />
+          <AppButton
+            label="Main Menu"
+            variant="secondary"
+            onPress={() => navigation.popToTop()}
+          />
+        </View>
+      </SafeAreaView>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: colors.bg,
     paddingHorizontal: layout.screenPad,
   },
   content: {
@@ -90,7 +93,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 14,
-    zIndex: 1,
+    zIndex: 2,
   },
   iconWrap: {
     width: 120,
@@ -104,18 +107,15 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   title: {
-    fontFamily: fonts.extrabold,
+    ...typeScale.display,
     color: colors.text,
-    fontSize: 32,
-    fontWeight: '800',
-    letterSpacing: -0.3,
   },
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     paddingHorizontal: 16,
-    paddingVertical: 7,
+    paddingVertical: 8,
     borderRadius: layout.buttonRadius,
     backgroundColor: 'rgba(232,197,71,0.16)',
     borderWidth: 1,
@@ -128,25 +128,20 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   card: {
-    marginTop: 10,
+    marginTop: 8,
     width: '100%',
     alignItems: 'center',
-    paddingVertical: 22,
+    paddingVertical: 24,
   },
   meta: {
-    fontFamily: fonts.semibold,
+    ...typeScale.label,
+    fontSize: 12,
     color: colors.textMuted,
-    fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: 0.5,
   },
   score: {
-    fontFamily: fonts.extrabold,
+    ...typeScale.scoreLarge,
     color: colors.text,
-    fontSize: 44,
-    fontWeight: '800',
     marginTop: 4,
-    letterSpacing: -1,
   },
   best: {
     fontFamily: fonts.extrabold,
@@ -154,12 +149,13 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: '800',
     marginTop: 4,
+    fontVariant: ['tabular-nums'],
   },
   divider: {
     height: 1,
     alignSelf: 'stretch',
     backgroundColor: colors.border,
-    marginVertical: 18,
+    marginVertical: 16,
   },
-  footer: { gap: 12, paddingBottom: 20, zIndex: 1 },
+  footer: { gap: 12, paddingBottom: 20, zIndex: 2 },
 });

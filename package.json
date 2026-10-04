@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
+    "@expo-google-fonts/alfa-slab-one": "^0.4.1",
     "@expo-google-fonts/inter": "^0.4.2",
     "@expo/metro-runtime": "~57.0.16",
     "@expo/vector-icons": "^15.0.2",
@@ -35,7 +36,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "test:engine": "node scripts/engine-smoke.mjs"
+    "test:engine": "node scripts/engine-smoke.mjs",
+    "test:layout": "node scripts/layout-check.mjs"
   },
   "private": true
 }

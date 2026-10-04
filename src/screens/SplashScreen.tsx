@@ -3,6 +3,7 @@ import { Animated, Easing, Platform, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { PlinkLogo } from '../components/PlinkLogo';
+import { ScreenBackground } from '../components/ScreenBackground';
 import { Tile } from '../components/Tile';
 import { useApp } from '../context/AppContext';
 import type { RootStackParamList } from '../navigation/types';
@@ -91,21 +92,23 @@ export function SplashScreen({ navigation }: Props) {
   }, [navigation, onboardingDone]);
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.stage}>
-        {tiles.map((t, i) => (
-          <FallingTile key={`${t.id}-${i}`} {...t} />
-        ))}
-        <View style={styles.hero}>
-          <PlinkLogo size="lg" animated showTagline />
+    <ScreenBackground showDecorTiles>
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.stage}>
+          {tiles.map((t, i) => (
+            <FallingTile key={`${t.id}-${i}`} {...t} />
+          ))}
+          <View style={styles.hero}>
+            <PlinkLogo size="lg" animated showTagline />
+          </View>
         </View>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
+  safe: { flex: 1 },
   stage: { flex: 1, overflow: 'hidden' },
   hero: {
     flex: 1,

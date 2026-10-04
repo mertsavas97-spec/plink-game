@@ -6,11 +6,12 @@ import { BOARD_PRESETS, COLOR_COUNT_LABELS, type BoardPreset, type ColorCount } 
 import { AppButton } from '../components/AppButton';
 import { Card } from '../components/Card';
 import { IconClose, IconSettings } from '../components/Icons';
+import { ScreenBackground } from '../components/ScreenBackground';
 import { useApp } from '../context/AppContext';
 import type { RootStackParamList } from '../navigation/types';
 import { colors } from '../theme/colors';
 import { layout } from '../theme/layout';
-import { fonts } from '../theme/typography';
+import { fonts, typeScale } from '../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'NewGame'>;
 
@@ -65,7 +66,8 @@ export function NewGameScreen({ navigation }: Props) {
   const [boardPreset, setBoardPreset] = useState<BoardPreset>(initial);
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <ScreenBackground>
+      <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
         <Pressable
           accessibilityLabel="Close"
@@ -141,14 +143,14 @@ export function NewGameScreen({ navigation }: Props) {
           onPress={() => navigation.navigate('Game', { colorCount, boardPreset })}
         />
       </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: colors.bg,
     paddingHorizontal: layout.screenPad,
   },
   header: {
@@ -158,8 +160,8 @@ const styles = StyleSheet.create({
     paddingTop: 4,
   },
   iconBtn: {
-    width: 44,
-    height: 44,
+    width: layout.iconBtn,
+    height: layout.iconBtn,
     borderRadius: layout.buttonRadius,
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -168,27 +170,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    fontFamily: fonts.extrabold,
-    color: colors.text,
+    ...typeScale.title,
     fontSize: 22,
-    fontWeight: '800',
+    color: colors.text,
   },
   subtitle: {
-    fontFamily: fonts.regular,
+    ...typeScale.body,
     color: colors.textMuted,
-    fontSize: 14,
     textAlign: 'center',
     marginTop: 8,
     marginBottom: 22,
   },
   section: {
-    fontFamily: fonts.bold,
+    ...typeScale.label,
     color: colors.textMuted,
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 1,
     marginBottom: 10,
-    textTransform: 'uppercase',
   },
   colorPanel: { marginBottom: 22, paddingVertical: 14 },
   colorRow: {

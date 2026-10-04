@@ -2,14 +2,15 @@ import React, { memo, useEffect } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
+  Easing,
   useAnimatedStyle,
   useSharedValue,
+  withRepeat,
+  withSequence,
   withSpring,
+  withTiming,
 } from 'react-native-reanimated';
-import {
-  colors,
-  type TileColorId,
-} from '../theme/colors';
+import { colors, type TileColorId } from '../theme/colors';
 import { layout } from '../theme/layout';
 import { fonts } from '../theme/typography';
 
@@ -40,16 +41,14 @@ function TileInner({
 }: Props) {
   const radius = Math.max(6, Math.round(size * layout.tileRadiusRatio));
   const letterSize = Math.max(12, Math.round(size * layout.letterScale));
-  const bevelH = Math.min(
-    layout.tileBevelMax,
-    Math.max(layout.tileBevelMin, Math.round(size * 0.12)),
-  );
+  const bevelH = Math.max(3, Math.round(size * layout.tileBevelRatio));
   const resolvedGap =
     gap ?? Math.max(2, Math.round(size * layout.tileGapRatio));
   const halfGap = resolvedGap / 2;
   const displayLetter = letter ?? colorId;
 
   const scale = useSharedValue(1);
+  const pulse = useSharedValue(1);
 
   useEffect(() => {
     scale.value = withSpring(selected ? layout.tileSelectedScale : 1, {
@@ -58,8 +57,33 @@ function TileInner({
     });
   }, [selected, scale]);
 
+  useEffect(() => {
+    if (selected) {
+      pulse.value = withRepeat(
+        withSequence(
+          withTiming(1, {
+            duration: layout.tileSelectedPulseMs / 2,
+            easing: Easing.inOut(Easing.quad),
+          }),
+          withTiming(0.6, {
+            duration: layout.tileSelectedPulseMs / 2,
+            easing: Easing.inOut(Easing.quad),
+          }),
+        ),
+        -1,
+        false,
+      );
+    } else {
+      pulse.value = withTiming(0, { duration: 160 });
+    }
+  }, [selected, pulse]);
+
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
+  }));
+
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: pulse.value,
   }));
 
   const base = colors.tile[colorId];
@@ -78,28 +102,52 @@ function TileInner({
           height: size,
           margin: halfGap,
           borderRadius: radius,
-          borderWidth: 1,
-          borderColor: dark,
-          shadowColor: glow ? base : '#000000',
+          shadowColor: base,
           shadowOpacity: glow ? 0.55 : layout.tileShadowOpacity,
-          shadowRadius: glow ? 10 : layout.tileShadowRadius,
+          shadowRadius: glow ? 12 : layout.tileShadowRadius,
           shadowOffset: { width: 0, height: layout.tileShadowOffsetY },
           elevation: glow ? 8 : layout.tileElevation,
           zIndex: selected ? 3 : 1,
         },
-        selected && styles.selectedRing,
       ]}
     >
+      {selected ? (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.selectedGlow,
+            glowStyle,
+            {
+              borderRadius: radius + 6,
+              borderColor: base,
+              shadowColor: base,
+              backgroundColor: `${base}55`,
+            },
+          ]}
+        />
+      ) : null}
       <LinearGradient
         colors={[light, base, dark]}
-        locations={[0, 0.45, 1]}
+        locations={[0, 0.48, 1]}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
-        style={[styles.fill, { borderRadius: radius }]}
+        style={[
+          styles.fill,
+          {
+            borderRadius: radius,
+            borderWidth: selected ? 2 : 1,
+            borderColor: selected ? colors.selection : 'rgba(255,255,255,0.18)',
+          },
+        ]}
       >
-        {/* Inner top highlight ~25% white on top 35% */}
+        {/* Soft glossy ellipse/strip — upper 40% */}
         <LinearGradient
-          colors={[`rgba(255,255,255,${layout.tileHighlightOpacity})`, 'rgba(255,255,255,0)']}
+          colors={[
+            `rgba(255,255,255,${layout.tileHighlightOpacity})`,
+            'rgba(255,255,255,0.08)',
+            'rgba(255,255,255,0)',
+          ]}
+          locations={[0, 0.55, 1]}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
           style={[
@@ -108,10 +156,22 @@ function TileInner({
               height: size * layout.tileHighlightHeightRatio,
               borderTopLeftRadius: radius,
               borderTopRightRadius: radius,
+              left: size * 0.08,
+              right: size * 0.08,
             },
           ]}
         />
-        {/* Darker same-hue bottom bevel (soft fade, not a hard band) */}
+        {/* 1px inner light edge */}
+        <View
+          pointerEvents="none"
+          style={[
+            styles.innerEdge,
+            {
+              borderRadius: Math.max(4, radius - 1),
+            },
+          ]}
+        />
+        {/* Bottom bevel ~8% */}
         <LinearGradient
           colors={['transparent', dark]}
           start={{ x: 0.5, y: 0 }}
@@ -119,7 +179,7 @@ function TileInner({
           style={[
             styles.bevel,
             {
-              height: bevelH + 2,
+              height: bevelH,
               borderBottomLeftRadius: radius,
               borderBottomRightRadius: radius,
             },
@@ -132,7 +192,7 @@ function TileInner({
               styles.letter,
               {
                 fontSize: letterSize,
-                lineHeight: letterSize * 1.1,
+                lineHeight: letterSize * 1.05,
                 ...(Platform.OS === 'android' ? { includeFontPadding: false } : null),
               },
             ]}
@@ -151,6 +211,15 @@ const styles = StyleSheet.create({
   outer: {
     overflow: 'visible',
   },
+  selectedGlow: {
+    ...StyleSheet.absoluteFill,
+    margin: -5,
+    borderWidth: 2,
+    shadowOpacity: 0.9,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 12,
+  },
   fill: {
     flex: 1,
     alignItems: 'center',
@@ -162,32 +231,27 @@ const styles = StyleSheet.create({
   highlight: {
     position: 'absolute',
     top: 0,
-    left: 0,
-    right: 0,
+  },
+  innerEdge: {
+    ...StyleSheet.absoluteFill,
+    margin: 1,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.22)',
   },
   bevel: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    opacity: 0.85,
-  },
-  selectedRing: {
-    borderWidth: 2.5,
-    borderColor: colors.selection,
-    shadowColor: colors.selection,
-    shadowOpacity: 0.65,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 10,
+    opacity: 0.9,
   },
   letter: {
     fontFamily: fonts.tileLetter,
     color: colors.text,
-    fontWeight: '700',
+    fontWeight: '400',
     zIndex: 2,
-    textShadowColor: 'rgba(0,0,0,0.45)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    textShadowColor: 'rgba(0,0,0,0.25)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 0,
   },
 });

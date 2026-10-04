@@ -1,20 +1,29 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, Platform, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import {
+  Animated,
+  Easing,
+  FlatList,
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  type ViewToken,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import {
-  IconArrowBack,
-  IconArrowDown,
-  IconHand,
-  IconSparkles,
-} from '../components/Icons';
 import { AppButton } from '../components/AppButton';
+import { IconArrowBack, IconArrowDown, IconSparkles } from '../components/Icons';
+import { ScreenBackground } from '../components/ScreenBackground';
+import { TapHand } from '../components/TapHand';
 import { Tile } from '../components/Tile';
 import { useApp } from '../context/AppContext';
 import type { RootStackParamList } from '../navigation/types';
 import { colors, type TileColorId } from '../theme/colors';
 import { layout } from '../theme/layout';
-import { fonts } from '../theme/typography';
+import { fonts, typeScale } from '../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding'>;
 
@@ -39,41 +48,76 @@ const STEPS = [
   },
 ] as const;
 
-const SELECT_DEMO: TileColorId[][] = [
-  ['A', 'B', 'D', 'E'],
-  ['B', 'D', 'D', 'A'],
-  ['A', 'D', 'D', 'E'],
-  ['E', 'B', 'A', 'C'],
+const DEMO_BOARDS: TileColorId[][][] = [
+  [
+    ['A', 'B', 'D', 'E'],
+    ['B', 'D', 'D', 'A'],
+    ['A', 'D', 'D', 'E'],
+    ['E', 'B', 'A', 'C'],
+  ],
+  [
+    ['A', 'B', 'E', 'D'],
+    ['A', 'C', 'C', 'B'],
+    ['D', 'C', 'C', 'A'],
+    ['E', 'B', 'A', 'D'],
+  ],
+  [
+    ['A', 'B', 'C', 'E'],
+    ['B', 'C', 'C', 'D'],
+    ['A', 'C', 'C', 'B'],
+    ['E', 'D', 'A', 'B'],
+  ],
 ];
-const SELECTED_D = new Set(['1,1', '2,1', '1,2', '2,2']);
 
-function SelectDemo() {
+const SELECTED: Array<Set<string>> = [
+  new Set(['1,1', '2,1', '1,2', '2,2']),
+  new Set(['1,1', '2,1', '1,2', '2,2']),
+  new Set(['1,1', '2,1', '1,2', '2,2']),
+];
+
+const TILE = layout.onboardingDemoTile;
+/** Hand sits on bottom-right of highlighted tile at col=2,row=2 (one tile in from edges). */
+const HAND_INSET = layout.boardPad + TILE * 0.35;
+
+function DemoBoard({
+  board,
+  selected,
+  showHand,
+  parallax,
+}: {
+  board: TileColorId[][];
+  selected: Set<string>;
+  showHand?: boolean;
+  parallax: Animated.AnimatedInterpolation<number>;
+}) {
   return (
-    <View style={styles.demoWrap}>
+    <Animated.View
+      style={[
+        styles.illustrationInner,
+        { transform: [{ translateX: parallax }] },
+      ]}
+    >
       <View style={styles.demoGrid}>
-        {SELECT_DEMO.map((row, r) => (
+        {board.map((row, r) => (
           <View key={r} style={styles.demoRow}>
             {row.map((id, c) => (
               <Tile
                 key={`${r}-${c}`}
                 colorId={id}
-                size={44}
+                size={TILE}
                 showLetter
-                selected={SELECTED_D.has(`${c},${r}`)}
+                selected={selected.has(`${c},${r}`)}
               />
             ))}
           </View>
         ))}
+        {showHand ? <TapHand right={HAND_INSET} bottom={HAND_INSET} /> : null}
       </View>
-      {/* Small hand over selected cluster — no dark circle chrome */}
-      <View style={styles.handFloat} pointerEvents="none">
-        <IconHand size={28} color={colors.text} />
-      </View>
-    </View>
+    </Animated.View>
   );
 }
 
-function ClearDemo() {
+function ClearExtras() {
   const drop = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     const native = Platform.OS !== 'web';
@@ -92,191 +136,185 @@ function ClearDemo() {
     loop.start();
     return () => loop.stop();
   }, [drop]);
-
-  const y = drop.interpolate({ inputRange: [0, 1], outputRange: [-10, 14] });
-
-  const board: TileColorId[][] = [
-    ['A', 'B', 'E', 'D'],
-    ['A', 'C', 'C', 'B'],
-    ['D', 'C', 'C', 'A'],
-    ['E', 'B', 'A', 'D'],
-  ];
-
+  const y = drop.interpolate({ inputRange: [0, 1], outputRange: [-8, 10] });
   return (
-    <View style={styles.demoWrap}>
-      <View style={styles.demoGrid}>
-        {board.map((row, r) => (
-          <View key={r} style={styles.demoRow}>
-            {row.map((id, c) => (
-              <Tile
-                key={`${r}-${c}`}
-                colorId={id}
-                size={40}
-                showLetter
-                selected={(c === 1 || c === 2) && (r === 1 || r === 2)}
-              />
-            ))}
-          </View>
-        ))}
-      </View>
-      <View style={styles.arrowRowCenter}>
-        <Animated.View style={{ transform: [{ translateY: y }] }}>
-          <IconArrowDown size={24} color={colors.cream} />
-        </Animated.View>
-        <IconArrowBack size={22} color={colors.cream} />
-      </View>
+    <View style={styles.extraRow}>
+      <Animated.View style={{ transform: [{ translateY: y }] }}>
+        <IconArrowDown size={22} color={colors.cream} />
+      </Animated.View>
+      <IconArrowBack size={20} color={colors.cream} />
     </View>
   );
 }
 
-function MasterDemo() {
-  const burst = useRef(new Animated.Value(0.85)).current;
-  useEffect(() => {
-    const native = Platform.OS !== 'web';
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(burst, {
-          toValue: 1.08,
-          duration: 650,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: native,
-        }),
-        Animated.timing(burst, { toValue: 0.85, duration: 650, useNativeDriver: native }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [burst]);
-
-  const board: TileColorId[][] = [
-    ['A', 'B', 'C', 'E'],
-    ['B', 'C', 'C', 'D'],
-    ['A', 'C', 'C', 'B'],
-    ['E', 'D', 'A', 'B'],
-  ];
-
+function MasterExtras() {
   return (
-    <View style={styles.demoWrap}>
-      <Animated.View style={[styles.burstRing, { transform: [{ scale: burst }], opacity: burst }]}>
-        <IconSparkles size={20} color={colors.gold} />
-        <IconSparkles size={16} color={colors.tile.D} />
-        <IconSparkles size={18} color={colors.tile.A} />
-      </Animated.View>
-      <View style={styles.demoGrid}>
-        {board.map((row, r) => (
-          <View key={r} style={styles.demoRow}>
-            {row.map((id, c) => (
-              <Tile
-                key={`${r}-${c}`}
-                colorId={id}
-                size={40}
-                showLetter
-                selected={id === 'C' && c >= 1 && c <= 2 && r >= 1 && r <= 2}
-              />
-            ))}
-          </View>
-        ))}
-      </View>
+    <View style={styles.extraRow}>
+      <IconSparkles size={18} color={colors.gold} />
       <Text style={styles.popLabel}>POP · +49</Text>
+      <IconSparkles size={16} color={colors.tile.A} />
     </View>
   );
 }
 
 export function OnboardingScreen({ navigation }: Props) {
   const { completeOnboarding } = useApp();
+  const { width: pageW } = useWindowDimensions();
   const [step, setStep] = useState(0);
-  const current = STEPS[step];
+  const listRef = useRef<FlatList<(typeof STEPS)[number]>>(null);
+  const scrollX = useRef(new Animated.Value(0)).current;
   const isLast = step === STEPS.length - 1;
-  const fade = useRef(new Animated.Value(1)).current;
-
-  const visual = useMemo(() => {
-    if (step === 0) return <SelectDemo />;
-    if (step === 1) return <ClearDemo />;
-    return <MasterDemo />;
-  }, [step]);
 
   const finish = async () => {
     await completeOnboarding();
     navigation.replace('MainMenu');
   };
 
-  const go = (next: number) => {
-    const native = Platform.OS !== 'web';
-    Animated.sequence([
-      Animated.timing(fade, { toValue: 0, duration: 140, useNativeDriver: native }),
-      Animated.timing(fade, { toValue: 1, duration: 220, useNativeDriver: native }),
-    ]).start();
-    setTimeout(() => setStep(next), 140);
-  };
-
   const next = () => {
     if (isLast) void finish();
-    else go(step + 1);
+    else listRef.current?.scrollToIndex({ index: step + 1, animated: true });
   };
 
-  return (
-    <SafeAreaView style={styles.safe}>
-      <Animated.View style={[styles.content, { opacity: fade }]}>
-        <Text style={styles.eyebrow}>{current.eyebrow}</Text>
-        <Text style={styles.title}>{current.title}</Text>
-        <Text style={styles.body}>{current.body}</Text>
-        {visual}
-      </Animated.View>
+  const onViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      const idx = viewableItems[0]?.index;
+      if (typeof idx === 'number') setStep(idx);
+    },
+  ).current;
 
-      <View style={styles.footer}>
-        <View style={styles.dots}>
-          {STEPS.map((s, i) => (
-            <View key={s.id} style={[styles.dot, i === step && styles.dotActive]} />
-          ))}
+  const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 60 }).current;
+
+  const onScroll = Animated.event(
+    [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+    { useNativeDriver: Platform.OS !== 'web' },
+  );
+
+  const renderItem = useCallback(
+    ({ item, index }: { item: (typeof STEPS)[number]; index: number }) => {
+      const parallax = scrollX.interpolate({
+        inputRange: [(index - 1) * pageW, index * pageW, (index + 1) * pageW],
+        outputRange: [24, 0, -24],
+        extrapolate: 'clamp',
+      });
+      return (
+        <View style={[styles.page, { width: pageW }]}>
+          <View style={styles.slotLabel}>
+            <Text style={styles.eyebrow}>{item.eyebrow}</Text>
+          </View>
+          <View style={styles.slotTitle}>
+            <Text style={styles.title}>{item.title}</Text>
+          </View>
+          <View style={styles.slotBody}>
+            <Text style={styles.body}>{item.body}</Text>
+          </View>
+          <View style={styles.slotIllustration}>
+            <DemoBoard
+              board={DEMO_BOARDS[index]}
+              selected={SELECTED[index]}
+              showHand={index === 0}
+              parallax={parallax}
+            />
+            {index === 1 ? <ClearExtras /> : null}
+            {index === 2 ? <MasterExtras /> : null}
+          </View>
         </View>
-        <AppButton label={isLast ? 'Get Started' : 'Next'} onPress={next} variant="primary" />
-      </View>
-    </SafeAreaView>
+      );
+    },
+    [scrollX, pageW],
+  );
+
+  return (
+    <ScreenBackground showDecorTiles>
+      <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
+        <Animated.FlatList
+          ref={listRef as RefObject<FlatList<(typeof STEPS)[number]>>}
+          data={[...STEPS]}
+          keyExtractor={(s) => s.id}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          bounces={false}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={viewConfig}
+          renderItem={renderItem}
+          getItemLayout={(_, index) => ({
+            length: pageW,
+            offset: pageW * index,
+            index,
+          })}
+          onMomentumScrollEnd={(e: NativeSyntheticEvent<NativeScrollEvent>) => {
+            const idx = Math.round(e.nativeEvent.contentOffset.x / pageW);
+            setStep(idx);
+          }}
+          style={styles.pager}
+        />
+
+        <View style={styles.footer}>
+          <View style={styles.dots}>
+            {STEPS.map((s, i) => (
+              <View key={s.id} style={[styles.dot, i === step && styles.dotActive]} />
+            ))}
+          </View>
+          <AppButton
+            label={isLast ? 'Get Started' : 'Next'}
+            onPress={next}
+            variant="primary"
+          />
+        </View>
+      </SafeAreaView>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.bg,
+  safe: { flex: 1 },
+  pager: { flex: 1 },
+  page: {
     paddingHorizontal: layout.screenPad,
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
+    paddingTop: 24,
     alignItems: 'center',
-    gap: 12,
-    paddingBottom: 12,
+  },
+  slotLabel: {
+    height: 24,
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  slotTitle: {
+    height: 40,
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  slotBody: {
+    height: 52,
+    justifyContent: 'flex-start',
+    marginBottom: 16,
+    paddingHorizontal: 8,
+  },
+  slotIllustration: {
+    height: layout.onboardingIllustrationH,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  illustrationInner: {
+    alignItems: 'center',
   },
   eyebrow: {
-    fontFamily: fonts.bold,
+    ...typeScale.label,
     color: colors.cream,
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 1.4,
     textAlign: 'center',
   },
   title: {
-    fontFamily: fonts.extrabold,
+    ...typeScale.title,
     color: colors.text,
-    fontSize: 28,
-    fontWeight: '800',
-    lineHeight: 34,
-    letterSpacing: -0.3,
     textAlign: 'center',
   },
   body: {
-    fontFamily: fonts.regular,
+    ...typeScale.body,
     color: colors.textMuted,
-    fontSize: 15,
-    lineHeight: 22,
     textAlign: 'center',
-    maxWidth: 320,
-  },
-  demoWrap: {
-    marginTop: 16,
-    alignItems: 'center',
-    alignSelf: 'center',
   },
   demoGrid: {
     backgroundColor: colors.surface,
@@ -286,32 +324,25 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   demoRow: { flexDirection: 'row' },
-  handFloat: {
-    position: 'absolute',
-    right: 18,
-    bottom: 18,
-  },
-  arrowRowCenter: {
+  extraRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 12,
     marginTop: 12,
-  },
-  burstRing: {
-    flexDirection: 'row',
-    gap: 16,
-    marginBottom: 8,
+    height: 28,
   },
   popLabel: {
     fontFamily: fonts.bold,
     color: colors.gold,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     letterSpacing: 1.2,
-    marginTop: 10,
-    textAlign: 'center',
   },
-  footer: { paddingBottom: 18, gap: 14 },
+  footer: {
+    paddingHorizontal: layout.screenPad,
+    paddingBottom: 18,
+    gap: 14,
+  },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 2 },
   dot: {
     width: 8,

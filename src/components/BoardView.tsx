@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Board, Position } from '../engine';
+import { computeBoardLayout } from '../theme/boardLayout';
 import { colors } from '../theme/colors';
 import { layout } from '../theme/layout';
 import { Tile } from './Tile';
@@ -18,7 +19,7 @@ function posKey(col: number, row: number) {
   return `${col},${row}`;
 }
 
-/** Responsive board panel with moodboard tile chrome. */
+/** Responsive board panel — 16px screen margins, centered H+V. */
 export function BoardView({
   board,
   selected,
@@ -32,29 +33,16 @@ export function BoardView({
   const rows = board[0]?.length ?? 0;
 
   const { tileSize, gap } = useMemo(() => {
-    if (cols === 0 || rows === 0) {
-      return { tileSize: layout.comfortTile, gap: Math.round(layout.comfortTile * layout.tileGapRatio) };
-    }
-
-    const horizontalPad = layout.screenPad * 2 + layout.boardPad * 2;
-    const verticalChrome =
-      insets.top +
-      insets.bottom +
-      layout.chromeTop +
-      layout.chromeBottom +
-      56 +
-      layout.boardPad * 2;
-
-    const maxW = Math.max(160, screenW - horizontalPad);
-    const maxH = Math.max(200, screenH - verticalChrome);
-
-    // Estimate gap from tentative size, then resolve
-    const approx = Math.min(maxW / cols, maxH / rows);
-    const gap = Math.max(2, Math.round(approx * layout.tileGapRatio));
-    const byW = Math.floor((maxW - gap) / cols) - gap;
-    const byH = Math.floor((maxH - gap) / rows) - gap;
-    const tileSize = Math.max(layout.minTile, Math.min(layout.maxTile, Math.min(byW, byH)));
-    return { tileSize, gap: Math.max(2, Math.round(tileSize * layout.tileGapRatio)) };
+    const topChrome = insets.top + layout.chromeTop;
+    const bottomChrome = insets.bottom + layout.chromeBottom;
+    return computeBoardLayout({
+      screenW,
+      screenH,
+      cols,
+      rows,
+      topChrome,
+      bottomChrome,
+    });
   }, [screenW, screenH, cols, rows, insets.top, insets.bottom]);
 
   const rowIndices = useMemo(
@@ -65,40 +53,48 @@ export function BoardView({
   const cellPitch = tileSize + gap;
 
   return (
-    <View style={styles.frame}>
-      {rowIndices.map((row) => (
-        <View key={`r-${row}`} style={styles.row}>
-          {Array.from({ length: cols }, (_, col) => {
-            const cell = board[col][row];
-            if (cell == null) {
+    <View style={styles.outer}>
+      <View style={styles.frame}>
+        {rowIndices.map((row) => (
+          <View key={`r-${row}`} style={styles.row}>
+            {Array.from({ length: cols }, (_, col) => {
+              const cell = board[col][row];
+              if (cell == null) {
+                return (
+                  <View
+                    key={`e-${col}-${row}`}
+                    style={{ width: cellPitch, height: cellPitch }}
+                  />
+                );
+              }
+              const key = posKey(col, row);
+              const isSelected = selected.has(key) || (hintKeys?.has(key) ?? false);
               return (
-                <View
-                  key={`e-${col}-${row}`}
-                  style={{ width: cellPitch, height: cellPitch }}
+                <Tile
+                  key={key}
+                  colorId={cell}
+                  size={tileSize}
+                  gap={gap}
+                  selected={isSelected}
+                  showLetter={showLetters}
+                  onPress={() => onTilePress({ col, row })}
                 />
               );
-            }
-            const key = posKey(col, row);
-            const isSelected = selected.has(key) || (hintKeys?.has(key) ?? false);
-            return (
-              <Tile
-                key={key}
-                colorId={cell}
-                size={tileSize}
-                gap={gap}
-                selected={isSelected}
-                showLetter={showLetters}
-                onPress={() => onTilePress({ col, row })}
-              />
-            );
-          })}
-        </View>
-      ))}
+            })}
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  outer: {
+    width: '100%',
+    paddingHorizontal: layout.boardScreenMargin,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   frame: {
     alignSelf: 'center',
     backgroundColor: colors.surface,
@@ -106,6 +102,7 @@ const styles = StyleSheet.create({
     borderRadius: layout.boardRadius,
     borderWidth: 1,
     borderColor: colors.border,
+    maxWidth: '100%',
   },
   row: {
     flexDirection: 'row',

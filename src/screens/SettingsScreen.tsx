@@ -3,10 +3,12 @@ import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BOARD_PRESETS, type BoardPreset } from '../engine';
+import { ScreenBackground } from '../components/ScreenBackground';
 import { useApp } from '../context/AppContext';
 import type { RootStackParamList } from '../navigation/types';
 import { colors } from '../theme/colors';
-import { fonts } from '../theme/typography';
+import { layout } from '../theme/layout';
+import { fonts, typeScale } from '../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
@@ -43,6 +45,7 @@ export function SettingsScreen({ navigation }: Props) {
   ].label;
 
   return (
+    <ScreenBackground>
     <SafeAreaView style={styles.safe}>
       <Pressable onPress={() => navigation.goBack()} style={styles.back}>
         <Text style={styles.backText}>← Back</Text>
@@ -134,6 +137,7 @@ export function SettingsScreen({ navigation }: Props) {
         <Text style={styles.resetText}>Reset Progress</Text>
       </Pressable>
     </SafeAreaView>
+    </ScreenBackground>
   );
 }
 
@@ -158,7 +162,7 @@ function Row({
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: 24 },
+  safe: { flex: 1, paddingHorizontal: layout.screenPad },
   back: { paddingVertical: 8, alignSelf: 'flex-start' },
   backText: {
     fontFamily: fonts.semibold,
@@ -167,22 +171,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   title: {
-    fontFamily: fonts.extrabold,
+    ...typeScale.display,
     color: colors.text,
-    fontSize: 34,
-    fontWeight: '800',
     marginBottom: 22,
-    letterSpacing: -0.4,
   },
   section: {
-    fontFamily: fonts.bold,
+    ...typeScale.label,
     color: colors.textMuted,
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 1,
     marginTop: 22,
     marginBottom: 10,
-    textTransform: 'uppercase',
   },
   group: {
     backgroundColor: colors.surface,

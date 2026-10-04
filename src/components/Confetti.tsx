@@ -22,17 +22,18 @@ function Piece({
   size: number;
   spin: number;
 }) {
-  const y = useSharedValue(-40);
+  // Start fully above the viewport so pieces never cover the hero icon/title
+  const y = useSharedValue(-80);
   const opacity = useSharedValue(0);
-  const rotate = useSharedValue(0);
+  const rotate = useSharedValue(spin * 0.15);
 
   useEffect(() => {
-    opacity.value = withDelay(delay, withTiming(1, { duration: 200 }));
+    opacity.value = withDelay(delay, withTiming(0.85, { duration: 220 }));
     y.value = withDelay(
       delay,
-      withTiming(720, { duration: 2800 + delay, easing: Easing.in(Easing.quad) }),
+      withTiming(780, { duration: 3000 + delay, easing: Easing.in(Easing.quad) }),
     );
-    rotate.value = withDelay(delay, withTiming(spin, { duration: 2800 + delay }));
+    rotate.value = withDelay(delay, withTiming(spin, { duration: 3000 + delay }));
   }, [delay, opacity, rotate, spin, y]);
 
   const style = useAnimatedStyle(() => ({
@@ -60,7 +61,7 @@ function Piece({
   );
 }
 
-/** Falling colored squares for Board Cleared / Game Over. */
+/** Falling colored squares — always behind result content (zIndex 0). */
 export function Confetti({ count = 28 }: { count?: number }) {
   const pieces = useMemo(
     () =>
@@ -75,7 +76,7 @@ export function Confetti({ count = 28 }: { count?: number }) {
   );
 
   return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+    <View pointerEvents="none" style={styles.layer}>
       {pieces.map((p, i) => (
         <Piece key={i} {...p} />
       ))}
@@ -84,5 +85,10 @@ export function Confetti({ count = 28 }: { count?: number }) {
 }
 
 const styles = StyleSheet.create({
-  piece: { position: 'absolute', top: 0 },
+  layer: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 0,
+    elevation: 0,
+  },
+  piece: { position: 'absolute', top: -24 },
 });
