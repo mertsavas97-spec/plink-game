@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { Animated, Easing, Platform, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Platform, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { PlinkLogo } from '../components/PlinkLogo';
@@ -7,7 +7,6 @@ import { Tile } from '../components/Tile';
 import { useApp } from '../context/AppContext';
 import type { RootStackParamList } from '../navigation/types';
 import { colors, type TileColorId } from '../theme/colors';
-import { fonts } from '../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>;
 
@@ -75,7 +74,7 @@ function FallingTile({
       style={[styles.fall, { left, opacity, transform: [{ translateY: y }, { rotate: spin }] }]}
       pointerEvents="none"
     >
-      <Tile colorId={id} size={size} showLetter />
+      <Tile colorId={id} size={size} showLetter gap={0} />
     </Animated.View>
   );
 }
@@ -83,17 +82,6 @@ function FallingTile({
 export function SplashScreen({ navigation }: Props) {
   const { onboardingDone } = useApp();
   const tiles = useMemo(() => FALLING, []);
-  const tagOpacity = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const native = Platform.OS !== 'web';
-    Animated.timing(tagOpacity, {
-      toValue: 1,
-      duration: 500,
-      delay: 420,
-      useNativeDriver: native,
-    }).start();
-  }, [tagOpacity]);
 
   useEffect(() => {
     const id = setTimeout(() => {
@@ -109,10 +97,7 @@ export function SplashScreen({ navigation }: Props) {
           <FallingTile key={`${t.id}-${i}`} {...t} />
         ))}
         <View style={styles.hero}>
-          <PlinkLogo size="lg" animated />
-          <Animated.Text style={[styles.tagline, { opacity: tagOpacity }]}>
-            SAME COLORS. BIGGER MOMENTS.
-          </Animated.Text>
+          <PlinkLogo size="lg" animated showTagline />
         </View>
       </View>
     </SafeAreaView>
@@ -126,15 +111,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 20,
     zIndex: 2,
-  },
-  tagline: {
-    fontFamily: fonts.semibold,
-    color: colors.textMuted,
-    fontSize: 13,
-    letterSpacing: 1.6,
-    fontWeight: '600',
   },
   fall: {
     position: 'absolute',

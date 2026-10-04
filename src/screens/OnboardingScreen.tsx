@@ -72,7 +72,6 @@ function SelectDemo() {
                 size={48}
                 showLetter
                 selected={SELECTED_D.has(`${c},${r}`)}
-                dimmed={!SELECTED_D.has(`${c},${r}`)}
               />
             ))}
           </View>

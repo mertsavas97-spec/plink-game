@@ -18,10 +18,7 @@ function posKey(col: number, row: number) {
   return `${col},${row}`;
 }
 
-/**
- * Responsive dense board: tiles sized from available width/height after chrome + safe areas.
- * Prefer fewer/larger cells (see BOARD_PRESETS) so letters stay ~64% of tile edge.
- */
+/** Responsive board panel with moodboard tile chrome. */
 export function BoardView({
   board,
   selected,
@@ -33,10 +30,11 @@ export function BoardView({
   const insets = useSafeAreaInsets();
   const cols = board.length;
   const rows = board[0]?.length ?? 0;
-  const hasSelection = selected.size > 0 || (hintKeys != null && hintKeys.size > 0);
 
   const { tileSize, gap } = useMemo(() => {
-    if (cols === 0 || rows === 0) return { tileSize: layout.comfortTile, gap: layout.tileGap };
+    if (cols === 0 || rows === 0) {
+      return { tileSize: layout.comfortTile, gap: Math.round(layout.comfortTile * layout.tileGapRatio) };
+    }
 
     const horizontalPad = layout.screenPad * 2 + layout.boardPad * 2;
     const verticalChrome =
@@ -44,20 +42,19 @@ export function BoardView({
       insets.bottom +
       layout.chromeTop +
       layout.chromeBottom +
-      56 + // preview text + breathing room
+      56 +
       layout.boardPad * 2;
 
     const maxW = Math.max(160, screenW - horizontalPad);
     const maxH = Math.max(200, screenH - verticalChrome);
 
-    // Include gap in cell pitch
-    const gap = layout.tileGap;
+    // Estimate gap from tentative size, then resolve
+    const approx = Math.min(maxW / cols, maxH / rows);
+    const gap = Math.max(2, Math.round(approx * layout.tileGapRatio));
     const byW = Math.floor((maxW - gap) / cols) - gap;
     const byH = Math.floor((maxH - gap) / rows) - gap;
-    const raw = Math.min(byW, byH);
-    // Allow larger tiles on phones so letters stay moodboard-bold
-    const tileSize = Math.max(layout.minTile, Math.min(68, raw));
-    return { tileSize, gap };
+    const tileSize = Math.max(layout.minTile, Math.min(layout.maxTile, Math.min(byW, byH)));
+    return { tileSize, gap: Math.max(2, Math.round(tileSize * layout.tileGapRatio)) };
   }, [screenW, screenH, cols, rows, insets.top, insets.bottom]);
 
   const rowIndices = useMemo(
@@ -90,7 +87,6 @@ export function BoardView({
                 size={tileSize}
                 gap={gap}
                 selected={isSelected}
-                dimmed={hasSelection && !isSelected}
                 showLetter={showLetters}
                 onPress={() => onTilePress({ col, row })}
               />
@@ -107,7 +103,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     backgroundColor: colors.surface,
     padding: layout.boardPad,
-    borderRadius: 20,
+    borderRadius: layout.boardRadius,
     borderWidth: 1,
     borderColor: colors.border,
   },

@@ -43,6 +43,14 @@ export function IconTrophy({ size = 64, color = colors.gold }: Props) {
   return <Ionicons name="trophy" size={size} color={color} />;
 }
 
+export function IconCalendar({ size = 20, color = colors.text }: Props) {
+  return <Ionicons name="calendar-outline" size={size} color={color} />;
+}
+
+export function IconPalette({ size = 20, color = colors.text }: Props) {
+  return <Ionicons name="color-palette-outline" size={size} color={color} />;
+}
+
 export function IconHand({ size = 36, color = colors.text }: Props) {
   return <Ionicons name="hand-left-outline" size={size} color={color} />;
 }

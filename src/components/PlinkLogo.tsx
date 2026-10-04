@@ -1,111 +1,109 @@
-import React, { useEffect, useRef } from 'react';
-import { Animated, Easing, Platform, StyleSheet, Text, View } from 'react-native';
-import { LOGO_LETTERS, TILE_LETTERS, colors } from '../theme/colors';
+import React, { useEffect } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSpring,
+} from 'react-native-reanimated';
+import { LOGO_COLOR_IDS, LOGO_LETTERS, colors } from '../theme/colors';
+import { layout } from '../theme/layout';
 import { fonts } from '../theme/typography';
-
-const LOGO_COLORS = TILE_LETTERS.map((id) => colors.tile[id]);
+import { Tile } from './Tile';
 
 interface Props {
   size?: 'sm' | 'md' | 'lg';
   animated?: boolean;
+  showTagline?: boolean;
 }
 
-const SIZES = {
-  sm: { tile: 30, font: 16, gap: 5, radius: 8 },
-  md: { tile: 48, font: 24, gap: 7, radius: 12 },
-  lg: { tile: 62, font: 32, gap: 8, radius: 14 },
-} as const;
-
-/** Moodboard tile-block PLINK mark with gloss + optional entrance motion. */
-export function PlinkLogo({ size = 'lg', animated = false }: Props) {
-  const s = SIZES[size];
-  const scales = useRef(LOGO_LETTERS.map(() => new Animated.Value(animated ? 0.6 : 1))).current;
-  const opacities = useRef(LOGO_LETTERS.map(() => new Animated.Value(animated ? 0 : 1))).current;
+function LogoTile({
+  index,
+  letter,
+  colorId,
+  tileSize,
+  animated,
+}: {
+  index: number;
+  letter: string;
+  colorId: (typeof LOGO_COLOR_IDS)[number];
+  tileSize: number;
+  animated: boolean;
+}) {
+  const scale = useSharedValue(animated ? 0.55 : 1);
+  const opacity = useSharedValue(animated ? 0 : 1);
 
   useEffect(() => {
     if (!animated) return;
-    const native = Platform.OS !== 'web';
-    const anims = LOGO_LETTERS.map((_, i) =>
-      Animated.parallel([
-        Animated.timing(scales[i], {
-          toValue: 1,
-          duration: 420,
-          delay: i * 70,
-          easing: Easing.out(Easing.back(1.4)),
-          useNativeDriver: native,
-        }),
-        Animated.timing(opacities[i], {
-          toValue: 1,
-          duration: 280,
-          delay: i * 70,
-          useNativeDriver: native,
-        }),
-      ]),
+    scale.value = withDelay(
+      index * 70,
+      withSpring(1, { damping: 12, stiffness: 180 }),
     );
-    Animated.stagger(0, anims).start();
-  }, [animated, opacities, scales]);
+    opacity.value = withDelay(
+      index * 70,
+      withSpring(1, { damping: 16, stiffness: 160 }),
+    );
+  }, [animated, index, opacity, scale]);
+
+  const style = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ scale: scale.value }],
+  }));
 
   return (
-    <View style={[styles.row, { gap: s.gap }]} accessibilityRole="header" accessibilityLabel="PLINK">
-      {LOGO_LETTERS.map((ch, i) => (
-        <Animated.View
-          key={`${ch}-${i}`}
-          style={[
-            styles.tile,
-            {
-              width: s.tile,
-              height: s.tile,
-              borderRadius: s.radius,
-              backgroundColor: LOGO_COLORS[i],
-              opacity: opacities[i],
-              transform: [{ scale: scales[i] }],
-            },
-          ]}
-        >
-          <View style={[styles.gloss, { borderTopLeftRadius: s.radius, borderTopRightRadius: s.radius }]} />
-          <View
-            style={[
-              styles.depth,
-              { borderBottomLeftRadius: s.radius, borderBottomRightRadius: s.radius },
-            ]}
+    <Animated.View style={style}>
+      <Tile
+        colorId={colorId}
+        size={tileSize}
+        letter={letter}
+        showLetter
+        glow
+        gap={0}
+      />
+    </Animated.View>
+  );
+}
+
+/** Moodboard tile-block PLINK mark using shared Tile styling. */
+export function PlinkLogo({
+  size = 'lg',
+  animated = false,
+  showTagline = false,
+}: Props) {
+  const tileSize = layout.logoTile[size];
+  const gap = layout.logoGap[size];
+
+  return (
+    <View style={styles.wrap} accessibilityRole="header" accessibilityLabel="PLINK">
+      <View style={[styles.row, { gap }]}>
+        {LOGO_LETTERS.map((ch, i) => (
+          <LogoTile
+            key={`${ch}-${i}`}
+            index={i}
+            letter={ch}
+            colorId={LOGO_COLOR_IDS[i]}
+            tileSize={tileSize}
+            animated={animated}
           />
-          <Text style={[styles.letter, { fontSize: s.font }]}>{ch}</Text>
-        </Animated.View>
-      ))}
+        ))}
+      </View>
+      {showTagline ? (
+        <Text style={styles.tagline}>SAME COLORS. BIGGER MOMENTS.</Text>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrap: { alignItems: 'center', gap: 14 },
   row: { flexDirection: 'row', alignItems: 'center' },
-  tile: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  gloss: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '42%',
-    backgroundColor: 'rgba(255,255,255,0.24)',
-  },
-  depth: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: '28%',
-    backgroundColor: 'rgba(0,0,0,0.16)',
-  },
-  letter: {
-    fontFamily: fonts.extrabold,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    zIndex: 2,
-    textShadowColor: 'rgba(0,0,0,0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+  tagline: {
+    fontFamily: fonts.semibold,
+    color: colors.textMuted,
+    fontSize: layout.taglineSize,
+    fontWeight: '600',
+    letterSpacing: layout.taglineTracking,
+    textTransform: 'uppercase',
+    textAlign: 'center',
   },
 });
