@@ -1,0 +1,159 @@
+import React, { type ReactNode } from 'react';
+import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useApp } from '../context/AppContext';
+import type { RootStackParamList } from '../navigation/types';
+import { colors } from '../theme/colors';
+
+type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
+
+const LANGUAGES = [
+  { code: 'en', label: 'English' },
+  { code: 'de', label: 'Deutsch' },
+  { code: 'es', label: 'Español' },
+  { code: 'tr', label: 'Türkçe' },
+];
+
+export function SettingsScreen({ navigation }: Props) {
+  const { settings, updateSettings, resetAllProgress } = useApp();
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <Pressable onPress={() => navigation.goBack()} style={styles.back}>
+        <Text style={styles.backText}>← Back</Text>
+      </Pressable>
+      <Text style={styles.title}>Settings</Text>
+
+      <View style={styles.group}>
+        <Row
+          label="Sound & Music"
+          hint="Stub — wiring later"
+          right={
+            <Switch
+              value={settings.soundEnabled}
+              onValueChange={(v) => updateSettings({ soundEnabled: v })}
+              trackColor={{ false: colors.border, true: colors.mint }}
+              thumbColor={colors.text}
+            />
+          }
+        />
+        <Row
+          label="Vibration"
+          hint="Stub — wiring later"
+          right={
+            <Switch
+              value={settings.vibrationEnabled}
+              onValueChange={(v) => updateSettings({ vibrationEnabled: v })}
+              trackColor={{ false: colors.border, true: colors.mint }}
+              thumbColor={colors.text}
+            />
+          }
+        />
+        <Row
+          label="Letters on tiles"
+          hint="Show A–E for accessibility"
+          right={
+            <Switch
+              value={settings.showTileLetters}
+              onValueChange={(v) => updateSettings({ showTileLetters: v })}
+              trackColor={{ false: colors.border, true: colors.mint }}
+              thumbColor={colors.text}
+            />
+          }
+        />
+      </View>
+
+      <Text style={styles.section}>Language</Text>
+      <View style={styles.group}>
+        {LANGUAGES.map((lang) => {
+          const active = settings.language === lang.code;
+          return (
+            <Pressable
+              key={lang.code}
+              onPress={() => updateSettings({ language: lang.code })}
+              style={styles.langRow}
+            >
+              <Text style={styles.langLabel}>{lang.label}</Text>
+              <Text style={styles.check}>{active ? '✓' : ''}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      <Text style={styles.stubNote}>Language UI is stubbed; copy stays English for MVP.</Text>
+
+      <Pressable
+        onPress={() => void resetAllProgress()}
+        style={styles.reset}
+      >
+        <Text style={styles.resetText}>Reset Progress</Text>
+      </Pressable>
+    </SafeAreaView>
+  );
+}
+
+function Row({
+  label,
+  hint,
+  right,
+}: {
+  label: string;
+  hint?: string;
+  right: ReactNode;
+}) {
+  return (
+    <View style={styles.row}>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.rowLabel}>{label}</Text>
+        {hint ? <Text style={styles.rowHint}>{hint}</Text> : null}
+      </View>
+      {right}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: 24 },
+  back: { paddingVertical: 8, alignSelf: 'flex-start' },
+  backText: { color: colors.textMuted, fontSize: 16, fontWeight: '600' },
+  title: { color: colors.text, fontSize: 32, fontWeight: '800', marginBottom: 20 },
+  section: {
+    color: colors.textMuted,
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    marginTop: 20,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+  },
+  group: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  rowLabel: { color: colors.text, fontSize: 16, fontWeight: '600' },
+  rowHint: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
+  langRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  langLabel: { flex: 1, color: colors.text, fontSize: 16, fontWeight: '600' },
+  check: { color: colors.mint, fontSize: 18, fontWeight: '800' },
+  stubNote: { color: colors.textMuted, fontSize: 12, marginTop: 8 },
+  reset: { marginTop: 32, alignItems: 'center', padding: 12 },
+  resetText: { color: colors.danger, fontSize: 15, fontWeight: '700' },
+});
