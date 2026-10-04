@@ -20,13 +20,13 @@ interface Props {
   selected?: boolean;
   showLetter?: boolean;
   onPress?: () => void;
-  /** Optional letter override (logo uses P–K). */
   letter?: string;
-  /** Soft colored glow behind tile (logo / decor). */
+  /** Soft colored glow — logo / selected / hint only. */
   glow?: boolean;
   gap?: number;
-  /** Dense boards (12+ cols): slightly smaller letters for breathing room. */
   dense?: boolean;
+  /** Dark overlay on body for decor tiles (letters stay white). */
+  decorDim?: number;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -41,6 +41,7 @@ function TileInner({
   glow = false,
   gap,
   dense = false,
+  decorDim = 0,
 }: Props) {
   const radius = Math.max(5, Math.round(size * layout.tileRadiusRatio));
   const scaleRatio = dense ? layout.letterScaleDense : layout.letterScale;
@@ -54,6 +55,7 @@ function TileInner({
     gap ?? Math.max(2, Math.round(size * layout.tileGapRatio));
   const halfGap = resolvedGap / 2;
   const displayLetter = letter ?? colorId;
+  const coloredGlow = glow || selected;
 
   const scale = useSharedValue(1);
   const pulse = useSharedValue(1);
@@ -110,11 +112,12 @@ function TileInner({
           height: size,
           margin: halfGap,
           borderRadius: radius,
-          shadowColor: base,
-          shadowOpacity: glow ? 0.5 : layout.tileShadowOpacity,
-          shadowRadius: glow ? 14 : layout.tileShadowRadius,
-          shadowOffset: { width: 0, height: layout.tileShadowOffsetY },
-          elevation: glow ? 8 : layout.tileElevation,
+          // Soft dark drop shadow by default; colored only when selected/logo glow
+          shadowColor: coloredGlow ? base : '#000000',
+          shadowOpacity: coloredGlow ? 0.55 : 0.35,
+          shadowRadius: coloredGlow ? 12 : 4,
+          shadowOffset: { width: 0, height: coloredGlow ? 3 : 2 },
+          elevation: coloredGlow ? 8 : 3,
           zIndex: selected ? 3 : 1,
         },
       ]}
@@ -170,10 +173,7 @@ function TileInner({
         />
         <View
           pointerEvents="none"
-          style={[
-            styles.innerEdge,
-            { borderRadius: Math.max(3, radius - 1) },
-          ]}
+          style={[styles.innerEdge, { borderRadius: Math.max(3, radius - 1) }]}
         />
         <LinearGradient
           colors={['transparent', dark]}
@@ -188,6 +188,18 @@ function TileInner({
             },
           ]}
         />
+        {decorDim > 0 ? (
+          <View
+            pointerEvents="none"
+            style={[
+              styles.decorDim,
+              {
+                borderRadius: radius,
+                backgroundColor: `rgba(0,0,0,${decorDim})`,
+              },
+            ]}
+          />
+        ) : null}
         {showLetter ? (
           <Text
             allowFontScaling={false}
@@ -211,9 +223,7 @@ function TileInner({
 export const Tile = memo(TileInner);
 
 const styles = StyleSheet.create({
-  outer: {
-    overflow: 'visible',
-  },
+  outer: { overflow: 'visible' },
   selectedGlow: {
     ...StyleSheet.absoluteFill,
     margin: -5,
@@ -231,10 +241,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  highlight: {
-    position: 'absolute',
-    top: 0,
-  },
+  highlight: { position: 'absolute', top: 0 },
   innerEdge: {
     ...StyleSheet.absoluteFill,
     margin: 1,
@@ -247,6 +254,10 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     opacity: 0.92,
+  },
+  decorDim: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 1,
   },
   letter: {
     fontFamily: fonts.tileLetter,

@@ -92,7 +92,7 @@ export function SplashScreen({ navigation }: Props) {
   }, [navigation, onboardingDone]);
 
   return (
-    <ScreenBackground showDecorTiles>
+    <ScreenBackground>
       <SafeAreaView style={styles.safe}>
         <View style={styles.stage}>
           {tiles.map((t, i) => (

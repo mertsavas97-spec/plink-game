@@ -46,7 +46,7 @@ export function MainMenuScreen({ navigation }: Props) {
   }));
 
   return (
-    <ScreenBackground showDecorTiles showLogoGlow>
+    <ScreenBackground decorPreset="menu" showLogoGlow>
       <SafeAreaView style={styles.safe}>
         <View style={styles.topRow}>
           <View style={{ flex: 1 }} />
@@ -61,7 +61,6 @@ export function MainMenuScreen({ navigation }: Props) {
         </View>
 
         <Animated.View style={[styles.body, contentStyle]}>
-          {/* Flex spacers 1 : 2 above / below logo */}
           <View style={styles.spacer1} />
           <View style={styles.hero}>
             <PlinkLogo size="lg" animated showTagline fillWidth />
@@ -78,21 +77,17 @@ export function MainMenuScreen({ navigation }: Props) {
             <ListButton
               label="Daily Puzzle"
               icon={<IconCalendar />}
-              onPress={() =>
-                navigation.navigate('ComingSoon', { feature: 'Daily Puzzle' })
-              }
+              onPress={() => navigation.navigate('DailyPuzzle')}
             />
             <ListButton
               label="Challenges"
               icon={<IconTrophy size={20} color={colors.text} />}
-              onPress={() =>
-                navigation.navigate('ComingSoon', { feature: 'Challenges' })
-              }
+              onPress={() => navigation.navigate('Challenges')}
             />
             <ListButton
               label="Themes"
               icon={<IconPalette />}
-              onPress={() => navigation.navigate('ComingSoon', { feature: 'Themes' })}
+              onPress={() => navigation.navigate('Themes')}
             />
           </View>
 
@@ -130,10 +125,7 @@ const styles = StyleSheet.create({
   body: { flex: 1, paddingBottom: 16, zIndex: 1 },
   spacer1: { flex: 1, minHeight: 8 },
   spacer2: { flex: 2, minHeight: 12 },
-  hero: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  hero: { alignItems: 'center', justifyContent: 'center' },
   actions: { gap: layout.listButtonGap },
   footerBanner: {
     flexDirection: 'row',

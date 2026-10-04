@@ -8,17 +8,34 @@ import React, {
   type ReactNode,
 } from 'react';
 import {
+  CHALLENGE_TARGETS,
+  DEFAULT_CHALLENGES,
   DEFAULT_SETTINGS,
+  getChallenges,
+  getDailyState,
   getHighScore,
   getSettings,
-  // getHighScore also used in recordScore for strict new-high check
   isOnboardingDone,
   resetProgress,
+  saveChallenges,
+  saveDailyState,
   saveSettings,
   setHighScore as persistHighScore,
   setOnboardingDone,
+  todayKey,
+  type ChallengeProgress,
+  type DailyState,
   type Settings,
 } from '../storage/persistence';
+
+export interface GameStatsEvent {
+  score: number;
+  tilesCleared: number;
+  elapsedMs: number;
+  undosUsed: number;
+  won: boolean;
+  daily?: boolean;
+}
 
 interface AppContextValue {
   ready: boolean;
@@ -29,6 +46,9 @@ interface AppContextValue {
   onboardingDone: boolean;
   completeOnboarding: () => Promise<void>;
   resetAllProgress: () => Promise<void>;
+  daily: DailyState;
+  challenges: ChallengeProgress;
+  applyGameStats: (ev: GameStatsEvent) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -38,19 +58,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [highScore, setHighScoreState] = useState(0);
   const [onboardingDone, setOnboardingDoneState] = useState(false);
+  const [daily, setDaily] = useState<DailyState>({
+    dateKey: todayKey(),
+    bestScore: 0,
+    played: false,
+  });
+  const [challenges, setChallenges] = useState<ChallengeProgress>({
+    ...DEFAULT_CHALLENGES,
+  });
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [s, hs, ob] = await Promise.all([
+      const [s, hs, ob, d, c] = await Promise.all([
         getSettings(),
         getHighScore(),
         isOnboardingDone(),
+        getDailyState(),
+        getChallenges(),
       ]);
       if (cancelled) return;
       setSettings(s);
       setHighScoreState(hs);
       setOnboardingDoneState(ob);
+      setDaily(d);
+      setChallenges(c);
       setReady(true);
     })();
     return () => {
@@ -67,7 +99,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const recordScore = useCallback(async (score: number) => {
-    // Compare against persisted previous best (strictly greater only)
     const previousBest = await getHighScore();
     const isNew = score > previousBest;
     if (isNew) {
@@ -82,10 +113,45 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await setOnboardingDone();
   }, []);
 
+  const applyGameStats = useCallback(async (ev: GameStatsEvent) => {
+    setChallenges((prev) => {
+      const next: ChallengeProgress = {
+        clear100: Math.min(
+          CHALLENGE_TARGETS.clear100,
+          prev.clear100 + ev.tilesCleared,
+        ),
+        score50k: Math.max(prev.score50k, Math.min(CHALLENGE_TARGETS.score50k, ev.score)),
+        under2min:
+          ev.won && ev.elapsedMs <= 120_000
+            ? Math.max(prev.under2min, 1)
+            : prev.under2min,
+        undo3: Math.min(CHALLENGE_TARGETS.undo3, Math.max(prev.undo3, ev.undosUsed)),
+      };
+      void saveChallenges(next);
+      return next;
+    });
+
+    if (ev.daily) {
+      setDaily((prev) => {
+        const key = todayKey();
+        const base = prev.dateKey === key ? prev : { dateKey: key, bestScore: 0, played: false };
+        const next: DailyState = {
+          dateKey: key,
+          played: true,
+          bestScore: Math.max(base.bestScore, ev.score),
+        };
+        void saveDailyState(next);
+        return next;
+      });
+    }
+  }, []);
+
   const resetAllProgress = useCallback(async () => {
     await resetProgress();
     setHighScoreState(0);
     setOnboardingDoneState(false);
+    setDaily({ dateKey: todayKey(), bestScore: 0, played: false });
+    setChallenges({ ...DEFAULT_CHALLENGES });
   }, []);
 
   const value = useMemo(
@@ -98,6 +164,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       onboardingDone,
       completeOnboarding,
       resetAllProgress,
+      daily,
+      challenges,
+      applyGameStats,
     }),
     [
       ready,
@@ -108,6 +177,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       onboardingDone,
       completeOnboarding,
       resetAllProgress,
+      daily,
+      challenges,
+      applyGameStats,
     ],
   );
 

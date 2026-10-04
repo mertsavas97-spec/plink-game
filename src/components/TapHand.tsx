@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -8,17 +9,29 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import { IconHand } from './Icons';
 import { colors } from '../theme/colors';
 import { layout } from '../theme/layout';
 
 interface Props {
-  /** Absolute position within the demo board wrapper */
   right?: number;
   bottom?: number;
 }
 
-/** Overlay hand cursor — never replaces tile letters. Looping tap + ripple. */
+/** Transparent SVG hand — shadowColor only, no yellow square / elevation plate. */
+function HandSvg({ size, color }: { size: number; color: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M8.5 11V6.5a1.5 1.5 0 0 1 3 0V11M11.5 10.5V5a1.5 1.5 0 0 1 3 0v6.5M14.5 11V6.75a1.5 1.5 0 0 1 3 0V14c0 3.5-2 5.5-5.5 5.5S6.5 17.5 6.5 14v-2.25a1.5 1.5 0 0 1 3 0V14"
+        stroke={color}
+        strokeWidth={1.8}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
 export function TapHand({ right = 10, bottom = 10 }: Props) {
   const scale = useSharedValue(1);
   const ripple = useSharedValue(0.4);
@@ -48,7 +61,7 @@ export function TapHand({ right = 10, bottom = 10 }: Props) {
   }));
 
   const rippleStyle = useAnimatedStyle(() => ({
-    opacity: 0.35 * (1.1 - ripple.value),
+    opacity: 0.3 * (1.1 - ripple.value),
     transform: [{ scale: 0.6 + ripple.value * 0.9 }],
   }));
 
@@ -56,7 +69,7 @@ export function TapHand({ right = 10, bottom = 10 }: Props) {
     <View pointerEvents="none" style={[styles.wrap, { right, bottom }]}>
       <Animated.View style={[styles.ripple, rippleStyle]} />
       <Animated.View style={[styles.hand, handStyle]}>
-        <IconHand size={layout.onboardingHand} color={colors.text} />
+        <HandSvg size={layout.onboardingHand} color={colors.text} />
       </Animated.View>
     </View>
   );
@@ -65,26 +78,28 @@ export function TapHand({ right = 10, bottom = 10 }: Props) {
 const styles = StyleSheet.create({
   wrap: {
     position: 'absolute',
-    width: layout.onboardingHand + 16,
-    height: layout.onboardingHand + 16,
+    width: layout.onboardingHand + 12,
+    height: layout.onboardingHand + 12,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 5,
+    backgroundColor: 'transparent',
   },
   ripple: {
     position: 'absolute',
-    width: layout.onboardingHand + 8,
-    height: layout.onboardingHand + 8,
-    borderRadius: (layout.onboardingHand + 8) / 2,
-    borderWidth: 2,
-    borderColor: colors.text,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    width: layout.onboardingHand + 6,
+    height: layout.onboardingHand + 6,
+    borderRadius: (layout.onboardingHand + 6) / 2,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.55)',
+    backgroundColor: 'transparent',
   },
   hand: {
+    backgroundColor: 'transparent',
     shadowColor: '#000',
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 6,
+    shadowOpacity: 0.4,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    // no elevation — avoids yellow/grey Android plate
   },
 });

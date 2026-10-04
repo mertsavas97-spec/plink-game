@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
@@ -9,71 +9,9 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import { colors, type TileColorId } from '../theme/colors';
+import { colors } from '../theme/colors';
 import { layout } from '../theme/layout';
-import { Tile } from './Tile';
-
-type DecorSpec = {
-  id: TileColorId;
-  /** Absolute px from top-left of screen */
-  x: number;
-  y: number;
-  size: number;
-  rotate: number;
-  opacity: number;
-  drift: number;
-  duration: number;
-  /** Soft blur feel via slight scale-down for “far” tiles */
-  far: boolean;
-};
-
-function seeded(n: number) {
-  const x = Math.sin(n * 12.9898 + 78.233) * 43758.5453;
-  return x - Math.floor(x);
-}
-
-/**
- * Fixed seeded composition: 7 tiles, 56–96px, ~60–70% visible,
- * clear center content band.
- */
-function buildDecor(screenW: number, screenH: number, seed = 11): DecorSpec[] {
-  const letters: TileColorId[] = ['A', 'C', 'E', 'B', 'D', 'A', 'C'];
-  // Anchor slots near edges so center stays clear (menu logo/buttons)
-  const slots: Array<{ xRatio: number; yRatio: number }> = [
-    { xRatio: -0.08, yRatio: 0.1 },
-    { xRatio: 0.78, yRatio: 0.08 },
-    { xRatio: -0.1, yRatio: 0.42 },
-    { xRatio: 0.82, yRatio: 0.38 },
-    { xRatio: -0.06, yRatio: 0.72 },
-    { xRatio: 0.76, yRatio: 0.68 },
-    { xRatio: 0.86, yRatio: 0.88 },
-  ];
-
-  return letters.map((id, i) => {
-    const r = seeded(seed + i * 17);
-    const r2 = seeded(seed + i * 31 + 3);
-    const r3 = seeded(seed + i * 53 + 7);
-    const size =
-      layout.decorTileMin +
-      Math.round(r * (layout.decorTileMax - layout.decorTileMin));
-    const slot = slots[i];
-    const x = slot.xRatio * screenW + (r2 - 0.5) * 12;
-    const y = slot.yRatio * screenH + (r3 - 0.5) * 16;
-    return {
-      id,
-      x,
-      y,
-      size,
-      rotate: -30 + r * 60,
-      opacity:
-        layout.decorOpacityMin +
-        r2 * (layout.decorOpacityMax - layout.decorOpacityMin),
-      drift: 4 + r3 * 3,
-      duration: 4500 + r * 2500,
-      far: size < 70 || r3 > 0.55,
-    };
-  });
-}
+import { DecorTiles, type DecorPreset } from './DecorTiles';
 
 function SoftGlow({
   cx,
@@ -94,11 +32,7 @@ function SoftGlow({
     <Svg
       width={size}
       height={size}
-      style={{
-        position: 'absolute',
-        left: cx - radius,
-        top: cy - radius,
-      }}
+      style={{ position: 'absolute', left: cx - radius, top: cy - radius }}
       pointerEvents="none"
     >
       <Defs>
@@ -131,69 +65,24 @@ function DriftLayer({
     );
   }, [t]);
   const anim = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: t.value * dx },
-      { translateY: t.value * dy },
-    ],
+    transform: [{ translateX: t.value * dx }, { translateY: t.value * dy }],
   }));
   return <Animated.View style={[StyleSheet.absoluteFill, anim]}>{children}</Animated.View>;
 }
 
-function FloatingTile({ spec }: { spec: DecorSpec }) {
-  const y = useSharedValue(0);
-  useEffect(() => {
-    y.value = withRepeat(
-      withTiming(spec.drift, {
-        duration: spec.duration,
-        easing: Easing.inOut(Easing.sin),
-      }),
-      -1,
-      true,
-    );
-  }, [y, spec.drift, spec.duration]);
-
-  const anim = useAnimatedStyle(() => ({
-    transform: [
-      { translateY: y.value - spec.drift / 2 },
-      { rotate: `${spec.rotate}deg` },
-      { scale: spec.far ? 0.92 : 1 },
-    ],
-    opacity: spec.far ? spec.opacity * 0.85 : spec.opacity,
-  }));
-
-  return (
-    <Animated.View
-      style={[
-        styles.decorItem,
-        { left: spec.x, top: spec.y, width: spec.size, height: spec.size },
-        anim,
-      ]}
-    >
-      <Tile colorId={spec.id} size={spec.size} showLetter gap={0} glow />
-    </Animated.View>
-  );
-}
-
 interface Props {
-  /** Decorative floating tiles (menu / onboarding / results). */
-  showDecorTiles?: boolean;
-  /** Faint cyan glow behind logo area (main menu). */
+  /** Screen-specific decorative tiles (menu / onboarding / result only). */
+  decorPreset?: DecorPreset;
   showLogoGlow?: boolean;
   children?: React.ReactNode;
 }
 
-/** Shared atmospheric background — gradient + soft SVG glows (+ optional decor). */
 export function ScreenBackground({
-  showDecorTiles = false,
+  decorPreset,
   showLogoGlow = false,
   children,
 }: Props) {
   const { width: screenW, height: screenH } = useWindowDimensions();
-  const decor = useMemo(
-    () => (showDecorTiles ? buildDecor(screenW, screenH) : []),
-    [showDecorTiles, screenW, screenH],
-  );
-
   const glowR = screenW * 0.7;
 
   return (
@@ -205,7 +94,6 @@ export function ScreenBackground({
         end={{ x: 0.5, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
-
       <DriftLayer dx={22} dy={-14}>
         <SoftGlow
           cx={screenW * 0.08}
@@ -233,14 +121,7 @@ export function ScreenBackground({
           opacity={0.12}
         />
       ) : null}
-
-      {showDecorTiles ? (
-        <View pointerEvents="none" style={styles.decorLayer}>
-          {decor.map((d, i) => (
-            <FloatingTile key={`${d.id}-${i}`} spec={d} />
-          ))}
-        </View>
-      ) : null}
+      {decorPreset ? <DecorTiles preset={decorPreset} /> : null}
       <View style={styles.content}>{children}</View>
     </View>
   );
@@ -249,11 +130,4 @@ export function ScreenBackground({
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg, overflow: 'hidden' },
   content: { flex: 1, zIndex: 2 },
-  decorLayer: {
-    ...StyleSheet.absoluteFill,
-    zIndex: 1,
-  },
-  decorItem: {
-    position: 'absolute',
-  },
 });

@@ -8,11 +8,11 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { AppButton } from '../components/AppButton';
-import { Card } from '../components/Card';
 import { Confetti } from '../components/Confetti';
 import { IconCrown, IconHappy, IconPlay, IconTrophy } from '../components/Icons';
 import { ScreenBackground } from '../components/ScreenBackground';
 import type { RootStackParamList } from '../navigation/types';
+import { dateSeed, todayKey } from '../storage/persistence';
 import { colors } from '../theme/colors';
 import { layout } from '../theme/layout';
 import { fonts, typeScale } from '../theme/typography';
@@ -24,7 +24,7 @@ function formatScore(n: number) {
 }
 
 export function GameOverScreen({ navigation, route }: Props) {
-  const { score, best, isNewHigh, won, colorCount, boardPreset } = route.params;
+  const { score, best, isNewHigh, won, colorCount, boardPreset, daily } = route.params;
   const pop = useSharedValue(0.7);
 
   useEffect(() => {
@@ -36,9 +36,8 @@ export function GameOverScreen({ navigation, route }: Props) {
   }));
 
   return (
-    <ScreenBackground showDecorTiles>
+    <ScreenBackground decorPreset="result">
       <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
-        {/* Confetti behind all text/cards */}
         <View style={styles.confettiHost} pointerEvents="none">
           <Confetti />
         </View>
@@ -62,13 +61,11 @@ export function GameOverScreen({ navigation, route }: Props) {
               <View style={styles.badgePlaceholder} />
             )}
 
-            <Card style={styles.card}>
-              <Text style={styles.meta}>Score</Text>
-              <Text style={styles.score}>{formatScore(score)}</Text>
-              <View style={styles.divider} />
-              <Text style={styles.meta}>Best</Text>
-              <Text style={styles.best}>{formatScore(best)}</Text>
-            </Card>
+            <Text style={styles.meta}>Score</Text>
+            <Text style={styles.score}>{formatScore(score)}</Text>
+            <View style={styles.divider} />
+            <Text style={styles.meta}>Best</Text>
+            <Text style={styles.best}>{formatScore(best)}</Text>
           </View>
         </View>
 
@@ -77,7 +74,14 @@ export function GameOverScreen({ navigation, route }: Props) {
             label="Play Again"
             variant="primary"
             icon={<IconPlay size={18} color={colors.textDark} />}
-            onPress={() => navigation.replace('Game', { colorCount, boardPreset })}
+            onPress={() =>
+              navigation.replace('Game', {
+                colorCount,
+                boardPreset,
+                daily,
+                seed: daily ? dateSeed(todayKey()) : undefined,
+              })
+            }
           />
           <AppButton
             label="Main Menu"
@@ -91,23 +95,10 @@ export function GameOverScreen({ navigation, route }: Props) {
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    paddingHorizontal: layout.screenPad,
-  },
-  confettiHost: {
-    ...StyleSheet.absoluteFill,
-    zIndex: 0,
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    zIndex: 2,
-  },
-  resultGroup: {
-    alignItems: 'center',
-    gap: 12,
-  },
+  safe: { flex: 1, paddingHorizontal: layout.screenPad },
+  confettiHost: { ...StyleSheet.absoluteFill, zIndex: 0 },
+  content: { flex: 1, justifyContent: 'center', zIndex: 2 },
+  resultGroup: { alignItems: 'center', gap: 8 },
   iconWrap: {
     width: 120,
     height: 120,
@@ -117,11 +108,9 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 4,
   },
-  title: {
-    ...typeScale.display,
-    color: colors.text,
-  },
+  title: { ...typeScale.display, color: colors.text },
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -133,47 +122,30 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.gold,
     minHeight: 36,
+    marginBottom: 8,
   },
-  badgePlaceholder: { height: 36 },
+  badgePlaceholder: { height: 36, marginBottom: 8 },
   newHigh: {
     fontFamily: fonts.bold,
     color: colors.gold,
     fontSize: 14,
     fontWeight: '700',
   },
-  card: {
-    marginTop: 4,
-    width: '100%',
-    alignItems: 'center',
-    paddingVertical: 24,
-  },
-  meta: {
-    ...typeScale.label,
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-  score: {
-    ...typeScale.scoreLarge,
-    color: colors.text,
-    marginTop: 4,
-  },
+  meta: { ...typeScale.label, color: colors.textMuted },
+  score: { ...typeScale.scoreLarge, color: colors.text, marginTop: 2 },
   best: {
     fontFamily: fonts.extrabold,
     color: colors.gold,
     fontSize: 30,
     fontWeight: '800',
-    marginTop: 4,
+    marginTop: 2,
     fontVariant: ['tabular-nums'],
   },
   divider: {
-    height: 1,
-    alignSelf: 'stretch',
-    backgroundColor: colors.border,
-    marginVertical: 16,
+    height: StyleSheet.hairlineWidth,
+    width: 120,
+    backgroundColor: colors.borderStrong,
+    marginVertical: 12,
   },
-  footer: {
-    gap: 12,
-    paddingBottom: 16,
-    zIndex: 2,
-  },
+  footer: { gap: 12, paddingBottom: 16, zIndex: 2 },
 });

@@ -5,7 +5,12 @@ export type RootStackParamList = {
   Onboarding: undefined;
   MainMenu: undefined;
   NewGame: undefined;
-  Game: { colorCount: ColorCount; boardPreset: BoardPreset };
+  Game: {
+    colorCount: ColorCount;
+    boardPreset: BoardPreset;
+    daily?: boolean;
+    seed?: number;
+  };
   GameOver: {
     score: number;
     best: number;
@@ -13,7 +18,11 @@ export type RootStackParamList = {
     won: boolean;
     colorCount: ColorCount;
     boardPreset: BoardPreset;
+    daily?: boolean;
   };
   Settings: undefined;
-  ComingSoon: { feature: string };
+  Language: undefined;
+  DailyPuzzle: undefined;
+  Challenges: undefined;
+  Themes: undefined;
 };

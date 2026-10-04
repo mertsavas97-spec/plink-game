@@ -21,15 +21,17 @@ export const colors = {
   /** Primary CTA beige */
   cream: '#E9E2D6',
   creamPressed: '#DDD5C6',
-  accent: '#7DFFB3',
+  /** Toggle / accent cyan-teal (not mint) */
+  accent: '#2DB8C8',
+  accentSoft: 'rgba(45, 184, 200, 0.22)',
   gold: '#E8C547',
   danger: '#F35A5A',
   selection: '#FFFFFF',
   overlay: 'rgba(6, 10, 18, 0.82)',
   difficulty: {
-    easy: '#2DB8C8',
-    medium: '#5BC4E8',
-    hard: '#E83356',
+    easy: '#2DB8C8', // teal
+    medium: '#3D8BFF', // blue
+    hard: '#E83356', // red
   },
   /**
    * Tile hues eyedropped toward moodboard:

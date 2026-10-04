@@ -78,3 +78,35 @@ export function IconHome({ size = 20, color = colors.text }: Props) {
 export function IconHappy({ size = 64, color = colors.gold }: Props) {
   return <Ionicons name="happy" size={size} color={color} />;
 }
+
+export function IconChevronBack({ size = 22, color = colors.text }: Props) {
+  return <Ionicons name="chevron-back" size={size} color={color} />;
+}
+
+export function IconChevronForward({ size = 18, color = colors.textMuted }: Props) {
+  return <Ionicons name="chevron-forward" size={size} color={color} />;
+}
+
+export function IconLock({ size = 18, color = colors.textMuted }: Props) {
+  return <Ionicons name="lock-closed" size={size} color={color} />;
+}
+
+export function IconCheck({ size = 18, color = colors.accent }: Props) {
+  return <Ionicons name="checkmark-circle" size={size} color={color} />;
+}
+
+export function IconStar({ size = 18, color = colors.gold }: Props) {
+  return <Ionicons name="star" size={size} color={color} />;
+}
+
+export function IconReset({ size = 18, color = colors.danger }: Props) {
+  return <Ionicons name="trash-outline" size={size} color={color} />;
+}
+
+export function IconTimer({ size = 22, color = colors.text }: Props) {
+  return <Ionicons name="timer-outline" size={size} color={color} />;
+}
+
+export function IconGrid({ size = 22, color = colors.text }: Props) {
+  return <Ionicons name="grid-outline" size={size} color={color} />;
+}

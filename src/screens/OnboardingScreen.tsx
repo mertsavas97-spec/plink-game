@@ -246,7 +246,7 @@ export function OnboardingScreen({ navigation }: Props) {
   );
 
   return (
-    <ScreenBackground showDecorTiles>
+    <ScreenBackground decorPreset="onboarding">
       <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
         <Animated.FlatList
           ref={listRef as RefObject<FlatList<(typeof STEPS)[number]>>}
@@ -297,9 +297,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: layout.screenPad,
     paddingTop: layout.onboardingTopPad,
     flex: 1,
+    justifyContent: 'center',
   },
   copyBlock: {
     alignItems: 'center',
+    zIndex: 2,
   },
   slotLabel: {
     height: 24,

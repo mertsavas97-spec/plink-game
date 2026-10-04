@@ -1,8 +1,11 @@
-import React, { type ReactNode } from 'react';
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import React from 'react';
+import { Alert, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BOARD_PRESETS, type BoardPreset } from '../engine';
+import { Header } from '../components/Header';
+import { IconChevronForward, IconReset } from '../components/Icons';
+import { ListItem } from '../components/ListItem';
 import { ScreenBackground } from '../components/ScreenBackground';
 import { useApp } from '../context/AppContext';
 import type { RootStackParamList } from '../navigation/types';
@@ -12,14 +15,18 @@ import { fonts, typeScale } from '../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
-const LANGUAGES = [
-  { code: 'en', label: 'English' },
-  { code: 'de', label: 'Deutsch' },
-  { code: 'es', label: 'Español' },
-  { code: 'tr', label: 'Türkçe' },
-];
-
 const GRID_OPTIONS: BoardPreset[] = ['10x10', '12x14', '16x18'];
+
+const LANG_LABEL: Record<string, string> = {
+  en: 'English',
+  de: 'Deutsch',
+  es: 'Español',
+  tr: 'Türkçe',
+  fr: 'Français',
+  ar: 'العربية',
+  it: 'Italiano',
+  pt: 'Português',
+};
 
 export function SettingsScreen({ navigation }: Props) {
   const { settings, updateSettings, resetAllProgress } = useApp();
@@ -44,169 +51,130 @@ export function SettingsScreen({ navigation }: Props) {
       : '12x14'
   ].label;
 
+  const confirmReset = () => {
+    Alert.alert(
+      'Reset Progress',
+      'This clears high score, daily puzzle, challenges, and onboarding. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: () => void resetAllProgress(),
+        },
+      ],
+    );
+  };
+
   return (
     <ScreenBackground>
-    <SafeAreaView style={styles.safe}>
-      <Pressable onPress={() => navigation.goBack()} style={styles.back}>
-        <Text style={styles.backText}>← Back</Text>
-      </Pressable>
-      <Text style={styles.title}>Settings</Text>
+      <SafeAreaView style={styles.safe}>
+        <Header title="Settings" onBack={() => navigation.goBack()} />
 
-      <View style={styles.group}>
-        <Row
-          label="Sound & Music"
-          hint="Stub — wiring later"
-          right={
-            <Switch
-              value={settings.soundEnabled}
-              onValueChange={(v) => updateSettings({ soundEnabled: v })}
-              trackColor={{ false: colors.border, true: colors.accent }}
-              thumbColor={colors.text}
-            />
-          }
-        />
-        <Row
-          label="Vibration"
-          hint="Stub — wiring later"
-          right={
-            <Switch
-              value={settings.vibrationEnabled}
-              onValueChange={(v) => updateSettings({ vibrationEnabled: v })}
-              trackColor={{ false: colors.border, true: colors.accent }}
-              thumbColor={colors.text}
-            />
-          }
-        />
-        <Row
-          label="Letters on tiles"
-          hint="Show A–E for accessibility"
-          right={
-            <Switch
-              value={settings.showTileLetters}
-              onValueChange={(v) => updateSettings({ showTileLetters: v })}
-              trackColor={{ false: colors.border, true: colors.accent }}
-              thumbColor={colors.text}
-            />
-          }
-        />
-        <Row
-          label="Undo Limit"
-          hint="Max undo steps per game"
-          right={
-            <View style={styles.stepper}>
-              <Pressable onPress={() => bumpUndo(-1)} style={styles.stepBtn}>
-                <Text style={styles.stepBtnText}>−</Text>
+        <View style={styles.group}>
+          <ListItem
+            label="Sound & Music"
+            right={
+              <Switch
+                value={settings.soundEnabled}
+                onValueChange={(v) => updateSettings({ soundEnabled: v })}
+                trackColor={{ false: colors.border, true: colors.accent }}
+                thumbColor={colors.text}
+              />
+            }
+          />
+          <ListItem
+            label="Vibration"
+            right={
+              <Switch
+                value={settings.vibrationEnabled}
+                onValueChange={(v) => updateSettings({ vibrationEnabled: v })}
+                trackColor={{ false: colors.border, true: colors.accent }}
+                thumbColor={colors.text}
+              />
+            }
+          />
+          <ListItem
+            label="Language"
+            onPress={() => navigation.navigate('Language')}
+            right={
+              <View style={styles.langRight}>
+                <Text style={styles.langValue}>
+                  {LANG_LABEL[settings.language] ?? 'English'}
+                </Text>
+                <IconChevronForward />
+              </View>
+            }
+          />
+        </View>
+
+        <Text style={styles.section}>Game</Text>
+        <View style={styles.group}>
+          <ListItem
+            label="Undo Limit"
+            right={
+              <View style={styles.stepper}>
+                <Pressable onPress={() => bumpUndo(-1)} style={styles.stepBtn}>
+                  <Text style={styles.stepBtnText}>−</Text>
+                </Pressable>
+                <Text style={styles.stepValue}>{settings.undoLimit}</Text>
+                <Pressable onPress={() => bumpUndo(1)} style={styles.stepBtn}>
+                  <Text style={styles.stepBtnText}>+</Text>
+                </Pressable>
+              </View>
+            }
+          />
+          <ListItem
+            label="Grid Size"
+            right={
+              <Pressable onPress={cycleGrid} style={styles.gridBtn}>
+                <Text style={styles.gridBtnText}>{gridLabel}</Text>
               </Pressable>
-              <Text style={styles.stepValue}>{settings.undoLimit}</Text>
-              <Pressable onPress={() => bumpUndo(1)} style={styles.stepBtn}>
-                <Text style={styles.stepBtnText}>+</Text>
-              </Pressable>
-            </View>
-          }
-        />
-        <Row
-          label="Grid Size"
-          hint="Default for New Game"
-          right={
-            <Pressable onPress={cycleGrid} style={styles.gridBtn}>
-              <Text style={styles.gridBtnText}>{gridLabel}</Text>
-            </Pressable>
-          }
-        />
-      </View>
+            }
+          />
+          <ListItem
+            label="Letters on tiles"
+            right={
+              <Switch
+                value={settings.showTileLetters}
+                onValueChange={(v) => updateSettings({ showTileLetters: v })}
+                trackColor={{ false: colors.border, true: colors.accent }}
+                thumbColor={colors.text}
+              />
+            }
+          />
+        </View>
 
-      <Text style={styles.section}>Language</Text>
-      <View style={styles.group}>
-        {LANGUAGES.map((lang) => {
-          const active = settings.language === lang.code;
-          return (
-            <Pressable
-              key={lang.code}
-              onPress={() => updateSettings({ language: lang.code })}
-              style={styles.langRow}
-            >
-              <Text style={styles.langLabel}>{lang.label}</Text>
-              <Text style={styles.check}>{active ? '✓' : ''}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
-      <Text style={styles.stubNote}>Language UI is stubbed; copy stays English for MVP.</Text>
-
-      <Pressable onPress={() => void resetAllProgress()} style={styles.reset}>
-        <Text style={styles.resetText}>Reset Progress</Text>
-      </Pressable>
-    </SafeAreaView>
+        <Pressable onPress={confirmReset} style={styles.reset}>
+          <IconReset size={18} color={colors.danger} />
+          <Text style={styles.resetText}>Reset Progress</Text>
+        </Pressable>
+      </SafeAreaView>
     </ScreenBackground>
-  );
-}
-
-function Row({
-  label,
-  hint,
-  right,
-}: {
-  label: string;
-  hint?: string;
-  right: ReactNode;
-}) {
-  return (
-    <View style={styles.row}>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.rowLabel}>{label}</Text>
-        {hint ? <Text style={styles.rowHint}>{hint}</Text> : null}
-      </View>
-      {right}
-    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, paddingHorizontal: layout.screenPad },
-  back: { paddingVertical: 8, alignSelf: 'flex-start' },
-  backText: {
-    fontFamily: fonts.semibold,
-    color: colors.textMuted,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  title: {
-    ...typeScale.display,
-    color: colors.text,
-    marginBottom: 22,
-  },
-  section: {
-    ...typeScale.label,
-    color: colors.textMuted,
-    marginTop: 22,
-    marginBottom: 10,
-  },
   group: {
     backgroundColor: colors.surface,
-    borderRadius: 18,
+    borderRadius: layout.buttonRadius,
     borderWidth: 1,
     borderColor: colors.border,
     overflow: 'hidden',
   },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 15,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  rowLabel: {
-    fontFamily: fonts.semibold,
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  rowHint: {
-    fontFamily: fonts.regular,
+  section: {
+    ...typeScale.label,
     color: colors.textMuted,
-    fontSize: 12,
-    marginTop: 2,
+    marginTop: 24,
+    marginBottom: 10,
+  },
+  langRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  langValue: {
+    fontFamily: fonts.semibold,
+    color: colors.textMuted,
+    fontSize: 14,
+    fontWeight: '600',
   },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   stepBtn: {
@@ -227,11 +195,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     minWidth: 24,
     textAlign: 'center',
+    fontVariant: ['tabular-nums'],
   },
   gridBtn: {
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 999,
+    borderRadius: layout.buttonRadius,
     backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
     borderColor: colors.border,
@@ -242,29 +211,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
-  langRow: {
-    flexDirection: 'row',
+  reset: {
+    marginTop: 32,
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    padding: 12,
   },
-  langLabel: {
-    flex: 1,
-    fontFamily: fonts.semibold,
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  check: { color: colors.accent, fontSize: 18, fontWeight: '800' },
-  stubNote: {
-    fontFamily: fonts.regular,
-    color: colors.textMuted,
-    fontSize: 12,
-    marginTop: 8,
-  },
-  reset: { marginTop: 32, alignItems: 'center', padding: 12 },
   resetText: {
     fontFamily: fonts.bold,
     color: colors.danger,

@@ -37,8 +37,8 @@ function toKeySet(positions: Position[] | null | undefined): Set<string> {
 }
 
 export function GameScreen({ navigation, route }: Props) {
-  const { colorCount, boardPreset } = route.params;
-  const { settings, highScore, recordScore } = useApp();
+  const { colorCount, boardPreset, daily, seed } = route.params;
+  const { settings, highScore, recordScore, applyGameStats } = useApp();
   const resolvedPreset =
     boardPreset in BOARD_PRESETS ? boardPreset : ('12x14' as const);
 
@@ -47,6 +47,7 @@ export function GameScreen({ navigation, route }: Props) {
       {
         colorCount,
         boardSize: BOARD_PRESETS[resolvedPreset],
+        seed,
       },
       Date.now(),
       settings.undoLimit,
@@ -58,6 +59,8 @@ export function GameScreen({ navigation, route }: Props) {
   const [hint, setHint] = useState<Position[] | null>(null);
   const [paused, setPaused] = useState(false);
   const endingRef = useRef(false);
+  const tilesClearedRef = useRef(0);
+  const undosUsedRef = useRef(0);
 
   const bump = useCallback(() => setTick((t) => t + 1), []);
 
@@ -78,6 +81,14 @@ export function GameScreen({ navigation, route }: Props) {
     const score = engine.getScore();
     const previousBest = highScore;
     const isNewHigh = await recordScore(score);
+    await applyGameStats({
+      score,
+      tilesCleared: tilesClearedRef.current,
+      elapsedMs: engine.getElapsedMs(),
+      undosUsed: undosUsedRef.current,
+      won: status === 'won',
+      daily: !!daily,
+    });
     navigation.replace('GameOver', {
       score,
       best: isNewHigh ? score : previousBest,
@@ -85,8 +96,18 @@ export function GameScreen({ navigation, route }: Props) {
       won: status === 'won',
       colorCount,
       boardPreset: resolvedPreset,
+      daily,
     });
-  }, [engine, recordScore, highScore, navigation, colorCount, resolvedPreset]);
+  }, [
+    engine,
+    recordScore,
+    applyGameStats,
+    highScore,
+    navigation,
+    colorCount,
+    resolvedPreset,
+    daily,
+  ]);
 
   useEffect(() => {
     if (snap.status !== 'playing') {
@@ -106,6 +127,7 @@ export function GameScreen({ navigation, route }: Props) {
     const already =
       selected != null && selected.some((p) => `${p.col},${p.row}` === key);
     if (already) {
+      tilesClearedRef.current += cluster.length;
       engine.clearCluster(cluster);
       setSelected(null);
       bump();
@@ -131,11 +153,14 @@ export function GameScreen({ navigation, route }: Props) {
       {
         colorCount,
         boardSize: BOARD_PRESETS[resolvedPreset],
+        seed,
       },
       Date.now(),
       settings.undoLimit,
     );
     endingRef.current = false;
+    tilesClearedRef.current = 0;
+    undosUsedRef.current = 0;
     setSelected(null);
     setHint(null);
     setPaused(false);
@@ -148,6 +173,7 @@ export function GameScreen({ navigation, route }: Props) {
 
   const onUndo = () => {
     if (engine.undo()) {
+      undosUsedRef.current += 1;
       setSelected(null);
       setHint(null);
       bump();
