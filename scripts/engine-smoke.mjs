@@ -111,4 +111,11 @@ const seeded = createBoard(10, 10, 4, 42);
 assert(seeded.length === 10 && seeded[0].length === 10, 'seeded board size');
 assert(seeded.every((col) => col.every((c) => 'ABCD'.includes(c))), 'palette 4');
 
+// Rectangular boards (cols × rows)
+const rect = createBoard(12, 14, 3, 7);
+assert(rect.length === 12 && rect[0].length === 14, '12×14 rectangular board');
+const wide = createBoard(16, 18, 5, 99);
+assert(wide.length === 16 && wide[0].length === 18, '16×18 rectangular board');
+assert(Math.min(360 / 12, 480 / 14) === 30, 'tile size uses min(W/cols, H/rows)');
+
 console.log('engine-smoke: ok');

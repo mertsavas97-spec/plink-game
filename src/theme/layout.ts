@@ -44,4 +44,8 @@ export const layout = {
     md: 8,
     lg: 10,
   },
+  modalRadius: 16,
+  modalMaxWidth: 300,
+  modalPad: 22,
+  controlLabelSize: 11,
 } as const;

@@ -1,34 +1,31 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { AppButton } from '../components/AppButton';
 import { BoardView } from '../components/BoardView';
 import {
-  IconClose,
   IconHint,
+  IconHome,
   IconPause,
+  IconPlay,
   IconRedo,
+  IconRestart,
   IconSettings,
   IconUndo,
 } from '../components/Icons';
-import { PillButton } from '../components/PillButton';
 import { useApp } from '../context/AppContext';
 import { BOARD_PRESETS, GameEngine, clusterScore, type Position } from '../engine';
 import type { RootStackParamList } from '../navigation/types';
 import { colors } from '../theme/colors';
+import { layout } from '../theme/layout';
 import { fonts } from '../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Game'>;
 
 function formatScore(n: number) {
   return n.toLocaleString('en-US');
-}
-
-function formatTime(ms: number) {
-  const total = Math.max(0, Math.floor(ms / 1000));
-  const m = Math.floor(total / 60);
-  const s = total % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
 function toKeySet(positions: Position[] | null | undefined): Set<string> {
@@ -42,7 +39,7 @@ export function GameScreen({ navigation, route }: Props) {
   const { colorCount, boardPreset } = route.params;
   const { settings, highScore, recordScore } = useApp();
   const resolvedPreset =
-    boardPreset in BOARD_PRESETS ? boardPreset : ('8x8' as const);
+    boardPreset in BOARD_PRESETS ? boardPreset : ('12x14' as const);
 
   const engineRef = useRef(
     new GameEngine(
@@ -73,21 +70,16 @@ export function GameScreen({ navigation, route }: Props) {
     engine.setUndoLimit(settings.undoLimit);
   }, [engine, settings.undoLimit]);
 
-  useEffect(() => {
-    if (paused || snap.status !== 'playing') return;
-    const id = setInterval(() => bump(), 1000);
-    return () => clearInterval(id);
-  }, [paused, snap.status, bump]);
-
   const finishIfNeeded = useCallback(async () => {
     const status = engine.getStatus();
     if (status === 'playing' || endingRef.current) return;
     endingRef.current = true;
     const score = engine.getScore();
+    const previousBest = highScore;
     const isNewHigh = await recordScore(score);
     navigation.replace('GameOver', {
       score,
-      best: Math.max(highScore, score),
+      best: isNewHigh ? score : previousBest,
       isNewHigh,
       won: status === 'won',
       colorCount,
@@ -177,13 +169,10 @@ export function GameScreen({ navigation, route }: Props) {
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
       <View style={styles.topBar}>
-        <Pressable onPress={exitToMenu} style={styles.iconBtn} accessibilityLabel="Exit">
-          <IconClose />
-        </Pressable>
+        <View style={styles.sideSlot} />
         <View style={styles.scoreCenter}>
           <Text style={styles.scoreLabel}>Score</Text>
           <Text style={styles.score}>{formatScore(snap.score)}</Text>
-          <Text style={styles.timer}>{formatTime(snap.elapsedMs)}</Text>
         </View>
         <Pressable onPress={onPause} style={styles.iconBtn} accessibilityLabel="Pause">
           <IconPause />
@@ -204,16 +193,22 @@ export function GameScreen({ navigation, route }: Props) {
           </Text>
         ) : selected && selected.length === 2 ? (
           <Text style={styles.previewMuted}>Size 2 clears but scores 0</Text>
-        ) : (
-          <Text style={styles.previewMuted}>Tap a group, tap again to clear</Text>
-        )}
+        ) : null}
       </View>
 
       <View style={styles.controls}>
-        <IconControl label="Undo" disabled={!engine.canUndo()} onPress={onUndo}>
+        <IconControl
+          label="Undo"
+          disabled={!engine.canUndo()}
+          onPress={onUndo}
+        >
           <IconUndo color={engine.canUndo() ? colors.text : colors.textMuted} />
         </IconControl>
-        <IconControl label="Redo" disabled={!engine.canRedo()} onPress={onRedo}>
+        <IconControl
+          label="Redo"
+          disabled={!engine.canRedo()}
+          onPress={onRedo}
+        >
           <IconRedo color={engine.canRedo() ? colors.text : colors.textMuted} />
         </IconControl>
         <IconControl label="Hint" onPress={onHint}>
@@ -223,17 +218,34 @@ export function GameScreen({ navigation, route }: Props) {
 
       {paused ? (
         <View style={styles.overlay}>
+          <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
+          <View style={styles.dim} />
           <View style={styles.modal}>
             <Text style={styles.pausedTitle}>Paused</Text>
-            <PillButton label="Resume" variant="primary" onPress={onResume} />
-            <PillButton label="Restart" variant="secondary" onPress={onRestart} />
-            <PillButton
+            <AppButton
+              label="Resume"
+              variant="primary"
+              icon={<IconPlay size={18} color={colors.textDark} />}
+              onPress={onResume}
+            />
+            <AppButton
+              label="Restart"
+              variant="secondary"
+              icon={<IconRestart />}
+              onPress={onRestart}
+            />
+            <AppButton
               label="Settings"
               variant="secondary"
               icon={<IconSettings size={18} />}
               onPress={() => navigation.navigate('Settings')}
             />
-            <PillButton label="Main Menu" variant="ghost" onPress={exitToMenu} />
+            <AppButton
+              label="Main Menu"
+              variant="ghost"
+              icon={<IconHome />}
+              onPress={exitToMenu}
+            />
           </View>
         </View>
       ) : null}
@@ -260,6 +272,9 @@ function IconControl({
       style={[styles.controlBtn, disabled && styles.controlDisabled]}
     >
       {children}
+      <Text style={[styles.controlLabel, disabled && styles.controlLabelDisabled]}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -270,22 +285,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: layout.screenPad,
     paddingTop: 2,
     paddingBottom: 6,
     minHeight: 56,
   },
+  sideSlot: { width: 46 },
   iconBtn: {
     width: 46,
     height: 46,
-    borderRadius: 23,
+    borderRadius: layout.buttonRadius,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  scoreCenter: { alignItems: 'center' },
+  scoreCenter: { alignItems: 'center', flex: 1 },
   scoreLabel: {
     fontFamily: fonts.semibold,
     color: colors.textMuted,
@@ -296,19 +312,11 @@ const styles = StyleSheet.create({
   score: {
     fontFamily: fonts.extrabold,
     color: colors.text,
-    fontSize: 30,
+    fontSize: 32,
     fontWeight: '800',
     letterSpacing: -0.5,
   },
-  timer: {
-    fontFamily: fonts.bold,
-    color: colors.cream,
-    fontSize: 13,
-    fontWeight: '700',
-    marginTop: 2,
-    fontVariant: ['tabular-nums'],
-  },
-  boardWrap: { flex: 1, justifyContent: 'center', gap: 12, paddingHorizontal: 4 },
+  boardWrap: { flex: 1, justifyContent: 'center', gap: 10, paddingHorizontal: 4 },
   preview: {
     fontFamily: fonts.bold,
     textAlign: 'center',
@@ -325,46 +333,54 @@ const styles = StyleSheet.create({
   controls: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 18,
-    paddingBottom: 16,
+    gap: 22,
+    paddingBottom: 14,
     paddingTop: 4,
     paddingHorizontal: 20,
-    minHeight: 72,
+    minHeight: 76,
   },
   controlBtn: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: colors.surfaceElevated,
-    borderWidth: 1,
-    borderColor: colors.border,
+    minWidth: 64,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 4,
+    paddingVertical: 8,
   },
   controlDisabled: { opacity: 0.35 },
+  controlLabel: {
+    fontFamily: fonts.semibold,
+    color: colors.textMuted,
+    fontSize: layout.controlLabelSize,
+    fontWeight: '600',
+  },
+  controlLabelDisabled: { color: colors.textMuted },
   overlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: colors.overlay,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
   },
+  dim: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: colors.overlay,
+  },
   modal: {
     width: '100%',
-    maxWidth: 340,
+    maxWidth: layout.modalMaxWidth,
     backgroundColor: colors.surface,
-    borderRadius: 28,
-    padding: 26,
-    gap: 12,
+    borderRadius: layout.modalRadius,
+    padding: layout.modalPad,
+    gap: 10,
     borderWidth: 1,
     borderColor: colors.border,
+    zIndex: 2,
   },
   pausedTitle: {
     fontFamily: fonts.extrabold,
     color: colors.text,
-    fontSize: 30,
+    fontSize: 26,
     fontWeight: '800',
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
 });

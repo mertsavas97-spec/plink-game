@@ -17,7 +17,7 @@ const LANGUAGES = [
   { code: 'tr', label: 'Türkçe' },
 ];
 
-const GRID_OPTIONS: BoardPreset[] = ['8x8', '10x10', '12x12'];
+const GRID_OPTIONS: BoardPreset[] = ['10x10', '12x14', '16x18'];
 
 export function SettingsScreen({ navigation }: Props) {
   const { settings, updateSettings, resetAllProgress } = useApp();
@@ -30,7 +30,7 @@ export function SettingsScreen({ navigation }: Props) {
   const cycleGrid = () => {
     const current = GRID_OPTIONS.includes(settings.defaultBoardPreset)
       ? settings.defaultBoardPreset
-      : '8x8';
+      : '12x14';
     const idx = GRID_OPTIONS.indexOf(current);
     const next = GRID_OPTIONS[(idx + 1) % GRID_OPTIONS.length];
     updateSettings({ defaultBoardPreset: next });
@@ -39,7 +39,7 @@ export function SettingsScreen({ navigation }: Props) {
   const gridLabel = BOARD_PRESETS[
     GRID_OPTIONS.includes(settings.defaultBoardPreset)
       ? settings.defaultBoardPreset
-      : '8x8'
+      : '12x14'
   ].label;
 
   return (

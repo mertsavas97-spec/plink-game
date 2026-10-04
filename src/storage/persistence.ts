@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { BoardPreset } from '../engine';
+import { BOARD_PRESETS, type BoardPreset } from '../engine';
 
 const KEYS = {
   highScore: '@plink/highScore',
@@ -24,8 +24,15 @@ export const DEFAULT_SETTINGS: Settings = {
   language: 'en',
   showTileLetters: true,
   undoLimit: 3,
-  defaultBoardPreset: '8x8',
+  defaultBoardPreset: '12x14',
 };
+
+function normalizeBoardPreset(value: unknown): BoardPreset {
+  if (typeof value === 'string' && value in BOARD_PRESETS) {
+    return value as BoardPreset;
+  }
+  return DEFAULT_SETTINGS.defaultBoardPreset;
+}
 
 export async function getHighScore(): Promise<number> {
   try {
@@ -53,7 +60,12 @@ export async function getSettings(): Promise<Settings> {
   try {
     const raw = await AsyncStorage.getItem(KEYS.settings);
     if (!raw) return { ...DEFAULT_SETTINGS };
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+    const parsed = JSON.parse(raw) as Partial<Settings>;
+    return {
+      ...DEFAULT_SETTINGS,
+      ...parsed,
+      defaultBoardPreset: normalizeBoardPreset(parsed.defaultBoardPreset),
+    };
   } catch {
     return { ...DEFAULT_SETTINGS };
   }

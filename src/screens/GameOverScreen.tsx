@@ -1,11 +1,19 @@
-import React, { useEffect, useRef } from 'react';
-import { Animated, Platform, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { IconTrophy } from '../components/Icons';
-import { PillButton } from '../components/PillButton';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
+import { AppButton } from '../components/AppButton';
+import { Card } from '../components/Card';
+import { Confetti } from '../components/Confetti';
+import { IconCrown, IconHappy, IconPlay, IconTrophy } from '../components/Icons';
 import type { RootStackParamList } from '../navigation/types';
 import { colors } from '../theme/colors';
+import { layout } from '../theme/layout';
 import { fonts } from '../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GameOver'>;
@@ -16,47 +24,52 @@ function formatScore(n: number) {
 
 export function GameOverScreen({ navigation, route }: Props) {
   const { score, best, isNewHigh, won, colorCount, boardPreset } = route.params;
-  const pop = useRef(new Animated.Value(0.7)).current;
+  const pop = useSharedValue(0.7);
 
   useEffect(() => {
-    const native = Platform.OS !== 'web';
-    Animated.spring(pop, {
-      toValue: 1,
-      friction: 6,
-      tension: 80,
-      useNativeDriver: native,
-    }).start();
+    pop.value = withSpring(1, { damping: 12, stiffness: 160 });
   }, [pop]);
+
+  const iconStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pop.value }],
+  }));
 
   return (
     <SafeAreaView style={styles.safe}>
+      <Confetti />
       <View style={styles.content}>
-        <Animated.View style={[styles.trophyWrap, { transform: [{ scale: pop }] }]}>
-          <IconTrophy size={72} color={colors.gold} />
+        <Animated.View style={[styles.iconWrap, iconStyle]}>
+          {won ? (
+            <IconTrophy size={72} color={colors.gold} />
+          ) : (
+            <IconHappy size={72} color={colors.gold} />
+          )}
         </Animated.View>
-        <Text style={styles.title}>{won ? 'Board Cleared!' : 'No Moves Left'}</Text>
+        <Text style={styles.title}>{won ? 'Board Cleared!' : 'Game Over'}</Text>
         {isNewHigh ? (
           <View style={styles.badge}>
+            <IconCrown size={16} />
             <Text style={styles.newHigh}>New High Score!</Text>
           </View>
         ) : null}
 
-        <View style={styles.card}>
+        <Card style={styles.card}>
           <Text style={styles.meta}>Score</Text>
           <Text style={styles.score}>{formatScore(score)}</Text>
           <View style={styles.divider} />
           <Text style={styles.meta}>Best</Text>
           <Text style={styles.best}>{formatScore(best)}</Text>
-        </View>
+        </Card>
       </View>
 
       <View style={styles.footer}>
-        <PillButton
+        <AppButton
           label="Play Again"
           variant="primary"
+          icon={<IconPlay size={18} color={colors.textDark} />}
           onPress={() => navigation.replace('Game', { colorCount, boardPreset })}
         />
-        <PillButton
+        <AppButton
           label="Main Menu"
           variant="secondary"
           onPress={() => navigation.popToTop()}
@@ -67,9 +80,19 @@ export function GameOverScreen({ navigation, route }: Props) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: 24 },
-  content: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 14 },
-  trophyWrap: {
+  safe: {
+    flex: 1,
+    backgroundColor: colors.bg,
+    paddingHorizontal: layout.screenPad,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 14,
+    zIndex: 1,
+  },
+  iconWrap: {
     width: 120,
     height: 120,
     borderRadius: 60,
@@ -88,9 +111,12 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     paddingHorizontal: 16,
     paddingVertical: 7,
-    borderRadius: 999,
+    borderRadius: layout.buttonRadius,
     backgroundColor: 'rgba(232,197,71,0.16)',
     borderWidth: 1,
     borderColor: colors.gold,
@@ -102,14 +128,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   card: {
-    marginTop: 14,
+    marginTop: 10,
     width: '100%',
-    backgroundColor: colors.surface,
-    borderRadius: 22,
-    padding: 26,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
+    paddingVertical: 22,
   },
   meta: {
     fontFamily: fonts.semibold,
@@ -139,5 +161,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border,
     marginVertical: 18,
   },
-  footer: { gap: 12, paddingBottom: 20 },
+  footer: { gap: 12, paddingBottom: 20, zIndex: 1 },
 });

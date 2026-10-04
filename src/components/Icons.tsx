@@ -1,5 +1,5 @@
 import React from 'react';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 
 type Props = {
@@ -36,7 +36,7 @@ export function IconSettings({ size = 22, color = colors.text }: Props) {
 }
 
 export function IconCrown({ size = 18, color = colors.gold }: Props) {
-  return <Ionicons name="trophy" size={size} color={color} />;
+  return <MaterialCommunityIcons name="crown" size={size} color={color} />;
 }
 
 export function IconTrophy({ size = 64, color = colors.gold }: Props) {
@@ -65,4 +65,16 @@ export function IconArrowBack({ size = 28, color = colors.cream }: Props) {
 
 export function IconSparkles({ size = 28, color = colors.gold }: Props) {
   return <Ionicons name="sparkles" size={size} color={color} />;
+}
+
+export function IconRestart({ size = 20, color = colors.text }: Props) {
+  return <MaterialCommunityIcons name="rotate-left" size={size} color={color} />;
+}
+
+export function IconHome({ size = 20, color = colors.text }: Props) {
+  return <Ionicons name="home-outline" size={size} color={color} />;
+}
+
+export function IconHappy({ size = 64, color = colors.gold }: Props) {
+  return <Ionicons name="happy" size={size} color={color} />;
 }

@@ -8,6 +8,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { AppButton } from '../components/AppButton';
+import { Card } from '../components/Card';
+import { FloatingDecorTiles } from '../components/FloatingDecorTiles';
 import {
   IconCalendar,
   IconCrown,
@@ -38,13 +40,15 @@ export function MainMenuScreen({ navigation }: Props) {
     enter.value = withTiming(1, { duration: 420 });
   }, [enter]);
 
-  const heroStyle = useAnimatedStyle(() => ({
+  const contentStyle = useAnimatedStyle(() => ({
     opacity: enter.value,
-    transform: [{ translateY: (1 - enter.value) * 16 }],
+    transform: [{ translateY: (1 - enter.value) * 12 }],
   }));
 
   return (
     <SafeAreaView style={styles.safe}>
+      <FloatingDecorTiles />
+
       <View style={styles.topRow}>
         <View style={{ flex: 1 }} />
         <Pressable
@@ -56,41 +60,43 @@ export function MainMenuScreen({ navigation }: Props) {
         </Pressable>
       </View>
 
-      <Animated.View style={[styles.hero, heroStyle]}>
-        <PlinkLogo size="lg" animated showTagline />
-      </Animated.View>
-
-      <View style={styles.actions}>
-        <AppButton
-          label="Play"
-          variant="primary"
-          icon={<IconPlay size={18} color={colors.textDark} />}
-          onPress={() => navigation.navigate('NewGame')}
-        />
-        <ListButton
-          label="Daily Puzzle"
-          icon={<IconCalendar />}
-          onPress={() => navigation.navigate('ComingSoon', { feature: 'Daily Puzzle' })}
-        />
-        <ListButton
-          label="Challenges"
-          icon={<IconTrophy size={20} color={colors.text} />}
-          onPress={() => navigation.navigate('ComingSoon', { feature: 'Challenges' })}
-        />
-        <ListButton
-          label="Themes"
-          icon={<IconPalette />}
-          onPress={() => navigation.navigate('ComingSoon', { feature: 'Themes' })}
-        />
-      </View>
-
-      <View style={styles.footerBanner}>
-        <IconCrown size={22} />
-        <View>
-          <Text style={styles.highLabel}>High Score</Text>
-          <Text style={styles.highValue}>{formatScore(highScore)}</Text>
+      <Animated.View style={[styles.body, contentStyle]}>
+        <View style={styles.hero}>
+          <PlinkLogo size="lg" animated showTagline />
         </View>
-      </View>
+
+        <View style={styles.actions}>
+          <AppButton
+            label="Play"
+            variant="primary"
+            icon={<IconPlay size={18} color={colors.textDark} />}
+            onPress={() => navigation.navigate('NewGame')}
+          />
+          <ListButton
+            label="Daily Puzzle"
+            icon={<IconCalendar />}
+            onPress={() => navigation.navigate('ComingSoon', { feature: 'Daily Puzzle' })}
+          />
+          <ListButton
+            label="Challenges"
+            icon={<IconTrophy size={20} color={colors.text} />}
+            onPress={() => navigation.navigate('ComingSoon', { feature: 'Challenges' })}
+          />
+          <ListButton
+            label="Themes"
+            icon={<IconPalette />}
+            onPress={() => navigation.navigate('ComingSoon', { feature: 'Themes' })}
+          />
+        </View>
+
+        <Card style={styles.footerBanner}>
+          <IconCrown size={22} />
+          <View>
+            <Text style={styles.highLabel}>High Score</Text>
+            <Text style={styles.highValue}>{formatScore(highScore)}</Text>
+          </View>
+        </Card>
+      </Animated.View>
     </SafeAreaView>
   );
 }
@@ -101,10 +107,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
     paddingHorizontal: layout.screenPad,
   },
-  topRow: { flexDirection: 'row', alignItems: 'center', paddingTop: 4 },
+  topRow: { flexDirection: 'row', alignItems: 'center', paddingTop: 4, zIndex: 2 },
   gear: {
-    width: 46,
-    height: 46,
+    width: 44,
+    height: 44,
     borderRadius: layout.buttonRadius,
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -112,25 +118,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  body: { flex: 1, paddingBottom: 12, zIndex: 1 },
   hero: {
-    flex: 1,
-    justifyContent: 'center',
+    flexGrow: 0,
+    paddingTop: 36,
+    paddingBottom: 28,
     alignItems: 'center',
-    paddingBottom: 8,
+    minHeight: 180,
+    justifyContent: 'center',
   },
-  actions: { gap: layout.sectionGap, marginBottom: 18 },
+  actions: { gap: 10, marginBottom: 14 },
   footerBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     gap: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 22,
-    marginBottom: 14,
-    borderRadius: layout.buttonRadius,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    marginTop: 'auto',
   },
   highLabel: {
     fontFamily: fonts.semibold,

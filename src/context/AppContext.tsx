@@ -11,6 +11,7 @@ import {
   DEFAULT_SETTINGS,
   getHighScore,
   getSettings,
+  // getHighScore also used in recordScore for strict new-high check
   isOnboardingDone,
   resetProgress,
   saveSettings,
@@ -66,13 +67,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const recordScore = useCallback(async (score: number) => {
-    const isNew = score > highScore;
+    // Compare against persisted previous best (strictly greater only)
+    const previousBest = await getHighScore();
+    const isNew = score > previousBest;
     if (isNew) {
       setHighScoreState(score);
       await persistHighScore(score);
     }
     return isNew;
-  }, [highScore]);
+  }, []);
 
   const completeOnboarding = useCallback(async () => {
     setOnboardingDoneState(true);

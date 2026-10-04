@@ -8,11 +8,12 @@ import {
   IconHand,
   IconSparkles,
 } from '../components/Icons';
-import { PillButton } from '../components/PillButton';
+import { AppButton } from '../components/AppButton';
 import { Tile } from '../components/Tile';
 import { useApp } from '../context/AppContext';
 import type { RootStackParamList } from '../navigation/types';
 import { colors, type TileColorId } from '../theme/colors';
+import { layout } from '../theme/layout';
 import { fonts } from '../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding'>;
@@ -47,19 +48,6 @@ const SELECT_DEMO: TileColorId[][] = [
 const SELECTED_D = new Set(['1,1', '2,1', '1,2', '2,2']);
 
 function SelectDemo() {
-  const pulse = useRef(new Animated.Value(1)).current;
-  useEffect(() => {
-    const native = Platform.OS !== 'web';
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 1.06, duration: 700, useNativeDriver: native }),
-        Animated.timing(pulse, { toValue: 1, duration: 700, useNativeDriver: native }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [pulse]);
-
   return (
     <View style={styles.demoWrap}>
       <View style={styles.demoGrid}>
@@ -69,7 +57,7 @@ function SelectDemo() {
               <Tile
                 key={`${r}-${c}`}
                 colorId={id}
-                size={48}
+                size={44}
                 showLetter
                 selected={SELECTED_D.has(`${c},${r}`)}
               />
@@ -77,9 +65,10 @@ function SelectDemo() {
           </View>
         ))}
       </View>
-      <Animated.View style={[styles.handBadge, { transform: [{ scale: pulse }] }]}>
-        <IconHand size={26} color={colors.cream} />
-      </Animated.View>
+      {/* Small hand over selected cluster — no dark circle chrome */}
+      <View style={styles.handFloat} pointerEvents="none">
+        <IconHand size={28} color={colors.text} />
+      </View>
     </View>
   );
 }
@@ -106,47 +95,35 @@ function ClearDemo() {
 
   const y = drop.interpolate({ inputRange: [0, 1], outputRange: [-10, 14] });
 
+  const board: TileColorId[][] = [
+    ['A', 'B', 'E', 'D'],
+    ['A', 'C', 'C', 'B'],
+    ['D', 'C', 'C', 'A'],
+    ['E', 'B', 'A', 'D'],
+  ];
+
   return (
-    <View style={styles.clearDemo}>
+    <View style={styles.demoWrap}>
       <View style={styles.demoGrid}>
-        {(
-          [
-            ['A', 'B'],
-            ['A', 'C'],
-            ['D', 'C'],
-          ] as TileColorId[][]
-        ).map((row, r) => (
+        {board.map((row, r) => (
           <View key={r} style={styles.demoRow}>
             {row.map((id, c) => (
-              <Tile key={`${r}-${c}`} colorId={id} size={42} showLetter />
+              <Tile
+                key={`${r}-${c}`}
+                colorId={id}
+                size={40}
+                showLetter
+                selected={(c === 1 || c === 2) && (r === 1 || r === 2)}
+              />
             ))}
           </View>
         ))}
       </View>
-      <View style={styles.arrowCol}>
+      <View style={styles.arrowRowCenter}>
         <Animated.View style={{ transform: [{ translateY: y }] }}>
-          <IconArrowDown size={28} color={colors.cream} />
+          <IconArrowDown size={24} color={colors.cream} />
         </Animated.View>
-        <Text style={styles.arrowLabel}>gravity</Text>
-        <View style={styles.arrowRow}>
-          <IconArrowBack size={24} color={colors.cream} />
-          <Text style={styles.arrowLabel}>columns</Text>
-        </View>
-      </View>
-      <View style={styles.demoGrid}>
-        {(
-          [
-            ['A', 'B'],
-            ['A', 'C'],
-            ['D', 'C'],
-          ] as TileColorId[][]
-        ).map((row, r) => (
-          <View key={r} style={styles.demoRow}>
-            {row.map((id, c) => (
-              <Tile key={`${r}-${c}`} colorId={id} size={42} showLetter selected={r === 2} />
-            ))}
-          </View>
-        ))}
+        <IconArrowBack size={22} color={colors.cream} />
       </View>
     </View>
   );
@@ -171,24 +148,31 @@ function MasterDemo() {
     return () => loop.stop();
   }, [burst]);
 
-  const cluster: TileColorId[][] = [
-    ['C', 'C', 'C'],
-    ['C', 'C', 'C'],
-    ['C', 'C', 'C'],
+  const board: TileColorId[][] = [
+    ['A', 'B', 'C', 'E'],
+    ['B', 'C', 'C', 'D'],
+    ['A', 'C', 'C', 'B'],
+    ['E', 'D', 'A', 'B'],
   ];
 
   return (
-    <View style={styles.masterDemo}>
+    <View style={styles.demoWrap}>
       <Animated.View style={[styles.burstRing, { transform: [{ scale: burst }], opacity: burst }]}>
-        <IconSparkles size={22} color={colors.gold} />
-        <IconSparkles size={18} color={colors.tile.D} />
-        <IconSparkles size={20} color={colors.tile.A} />
+        <IconSparkles size={20} color={colors.gold} />
+        <IconSparkles size={16} color={colors.tile.D} />
+        <IconSparkles size={18} color={colors.tile.A} />
       </Animated.View>
       <View style={styles.demoGrid}>
-        {cluster.map((row, r) => (
+        {board.map((row, r) => (
           <View key={r} style={styles.demoRow}>
             {row.map((id, c) => (
-              <Tile key={`${r}-${c}`} colorId={id} size={46} showLetter selected />
+              <Tile
+                key={`${r}-${c}`}
+                colorId={id}
+                size={40}
+                showLetter
+                selected={id === 'C' && c >= 1 && c <= 2 && r >= 1 && r <= 2}
+              />
             ))}
           </View>
         ))}
@@ -245,86 +229,87 @@ export function OnboardingScreen({ navigation }: Props) {
             <View key={s.id} style={[styles.dot, i === step && styles.dotActive]} />
           ))}
         </View>
-        <PillButton label={isLast ? 'Get Started' : 'Next'} onPress={next} variant="primary" />
+        <AppButton label={isLast ? 'Get Started' : 'Next'} onPress={next} variant="primary" />
       </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: 24 },
-  content: { flex: 1, justifyContent: 'center', gap: 16, paddingBottom: 12 },
+  safe: {
+    flex: 1,
+    backgroundColor: colors.bg,
+    paddingHorizontal: layout.screenPad,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+    paddingBottom: 12,
+  },
   eyebrow: {
     fontFamily: fonts.bold,
     color: colors.cream,
     fontSize: 13,
     fontWeight: '700',
     letterSpacing: 1.4,
+    textAlign: 'center',
   },
   title: {
     fontFamily: fonts.extrabold,
     color: colors.text,
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '800',
-    lineHeight: 38,
+    lineHeight: 34,
     letterSpacing: -0.3,
+    textAlign: 'center',
   },
   body: {
     fontFamily: fonts.regular,
     color: colors.textMuted,
-    fontSize: 16,
-    lineHeight: 25,
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: 'center',
+    maxWidth: 320,
   },
-  demoWrap: { marginTop: 18, alignSelf: 'flex-start' },
+  demoWrap: {
+    marginTop: 16,
+    alignItems: 'center',
+    alignSelf: 'center',
+  },
   demoGrid: {
     backgroundColor: colors.surface,
-    padding: 10,
-    borderRadius: 18,
+    padding: layout.boardPad,
+    borderRadius: layout.boardRadius,
     borderWidth: 1,
     borderColor: colors.border,
   },
   demoRow: { flexDirection: 'row' },
-  handBadge: {
+  handFloat: {
     position: 'absolute',
-    right: -10,
-    bottom: -10,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: colors.surfaceElevated,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
+    right: 18,
+    bottom: 18,
   },
-  clearDemo: {
-    marginTop: 18,
+  arrowRowCenter: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    flexWrap: 'wrap',
+    gap: 16,
+    marginTop: 12,
   },
-  arrowCol: { alignItems: 'center', gap: 6, paddingHorizontal: 4 },
-  arrowRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 10 },
-  arrowLabel: {
-    fontFamily: fonts.semibold,
-    color: colors.cream,
-    fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: 0.4,
-  },
-  masterDemo: { marginTop: 20, alignItems: 'center', gap: 12 },
   burstRing: {
     flexDirection: 'row',
-    gap: 20,
-    marginBottom: 2,
+    gap: 16,
+    marginBottom: 8,
   },
   popLabel: {
     fontFamily: fonts.bold,
     color: colors.gold,
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
     letterSpacing: 1.2,
+    marginTop: 10,
+    textAlign: 'center',
   },
   footer: { paddingBottom: 18, gap: 14 },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 2 },

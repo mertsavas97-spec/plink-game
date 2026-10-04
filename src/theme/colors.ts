@@ -18,9 +18,9 @@ export const colors = {
   selection: '#FFFFFF',
   overlay: 'rgba(6, 10, 18, 0.82)',
   difficulty: {
-    easy: '#3DDC97',
-    medium: '#2DF3E5',
-    hard: '#F35A5A',
+    easy: '#2DB8C8', // blue/teal
+    medium: '#2DF3E5', // cyan
+    hard: '#F35A5A', // red
   },
   /** Tile base hues (P/L/I/N/K logo maps to A–E) */
   tile: {
