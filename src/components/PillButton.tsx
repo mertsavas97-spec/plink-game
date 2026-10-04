@@ -10,7 +10,7 @@ import {
 import { colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
 
-type Variant = 'primary' | 'secondary' | 'mint' | 'ghost' | 'danger';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 interface Props {
   label: string;
@@ -21,6 +21,7 @@ interface Props {
   icon?: ReactNode;
 }
 
+/** Moodboard CTAs: cream primary, dark secondary pills. */
 export function PillButton({
   label,
   onPress,
@@ -52,7 +53,7 @@ export function PillButton({
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: 52,
+    minHeight: 56,
     borderRadius: 999,
     paddingHorizontal: 28,
     alignItems: 'center',
@@ -63,7 +64,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  pressed: { opacity: 0.88, transform: [{ scale: 0.985 }] },
+  pressed: { opacity: 0.9, transform: [{ scale: 0.985 }] },
   disabled: { opacity: 0.4 },
   label: {
     fontFamily: fonts.bold,
@@ -75,8 +76,11 @@ const styles = StyleSheet.create({
 
 const variantStyles = StyleSheet.create({
   primary: { backgroundColor: colors.cream },
-  secondary: { backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border },
-  mint: { backgroundColor: colors.mint },
+  secondary: {
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
   ghost: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },
   danger: { backgroundColor: 'transparent' },
 });
@@ -84,7 +88,6 @@ const variantStyles = StyleSheet.create({
 const labelStyles = StyleSheet.create({
   primary: { color: colors.textDark },
   secondary: { color: colors.text },
-  mint: { color: colors.textDark },
   ghost: { color: colors.text },
   danger: { color: colors.danger },
 });

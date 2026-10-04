@@ -1,6 +1,6 @@
 import React from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import { NavigationContainer, DarkTheme } from '@react-navigation/native';
+import { NavigationContainer, DarkTheme, type LinkingOptions } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useApp } from '../context/AppContext';
 import { ComingSoonScreen } from '../screens/ComingSoonScreen';
@@ -28,6 +28,37 @@ const navTheme = {
   },
 };
 
+/** Deep links used for polish screenshots / demos. */
+const linking: LinkingOptions<RootStackParamList> = {
+  prefixes: ['http://localhost:8081', 'plink://'],
+  config: {
+    screens: {
+      Splash: '',
+      Onboarding: 'onboarding',
+      MainMenu: 'menu',
+      NewGame: 'new',
+      Game: {
+        path: 'game/:colorCount/:boardPreset',
+        parse: {
+          colorCount: Number,
+        },
+      },
+      GameOver: {
+        path: 'gameover',
+        parse: {
+          score: Number,
+          best: Number,
+          isNewHigh: (v: string) => v === '1' || v === 'true',
+          won: (v: string) => v === '1' || v === 'true',
+          colorCount: Number,
+        },
+      },
+      Settings: 'settings',
+      ComingSoon: 'soon/:feature',
+    },
+  },
+};
+
 export function AppNavigator() {
   const { ready } = useApp();
 
@@ -40,7 +71,7 @@ export function AppNavigator() {
   }
 
   return (
-    <NavigationContainer theme={navTheme}>
+    <NavigationContainer theme={navTheme} linking={linking}>
       <Stack.Navigator
         initialRouteName="Splash"
         screenOptions={{ headerShown: false, animation: 'fade' }}

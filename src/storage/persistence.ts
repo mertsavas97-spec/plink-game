@@ -24,7 +24,7 @@ export const DEFAULT_SETTINGS: Settings = {
   language: 'en',
   showTileLetters: true,
   undoLimit: 3,
-  defaultBoardPreset: '12x14',
+  defaultBoardPreset: '8x8',
 };
 
 export async function getHighScore(): Promise<number> {

@@ -12,13 +12,13 @@ import { fonts } from '../theme/typography';
 type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>;
 
 const FALLING: Array<{ id: TileColorId; left: `${number}%`; delay: number; size: number }> = [
-  { id: 'A', left: '8%', delay: 0, size: 36 },
-  { id: 'B', left: '78%', delay: 120, size: 32 },
-  { id: 'C', left: '18%', delay: 240, size: 28 },
-  { id: 'D', left: '70%', delay: 80, size: 40 },
-  { id: 'E', left: '88%', delay: 200, size: 30 },
-  { id: 'A', left: '4%', delay: 300, size: 26 },
-  { id: 'C', left: '60%', delay: 160, size: 34 },
+  { id: 'A', left: '6%', delay: 0, size: 40 },
+  { id: 'B', left: '76%', delay: 140, size: 34 },
+  { id: 'C', left: '16%', delay: 260, size: 30 },
+  { id: 'D', left: '68%', delay: 90, size: 42 },
+  { id: 'E', left: '86%', delay: 210, size: 32 },
+  { id: 'A', left: '3%', delay: 320, size: 28 },
+  { id: 'C', left: '58%', delay: 180, size: 36 },
 ];
 
 function FallingTile({
@@ -32,8 +32,9 @@ function FallingTile({
   delay: number;
   size: number;
 }) {
-  const y = useRef(new Animated.Value(-40)).current;
+  const y = useRef(new Animated.Value(-48)).current;
   const opacity = useRef(new Animated.Value(0)).current;
+  const rotate = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const native = Platform.OS !== 'web';
@@ -42,31 +43,36 @@ function FallingTile({
         Animated.delay(delay),
         Animated.parallel([
           Animated.timing(opacity, {
-            toValue: 0.85,
-            duration: 300,
+            toValue: 0.9,
+            duration: 320,
             useNativeDriver: native,
           }),
           Animated.timing(y, {
-            toValue: 520,
-            duration: 2800,
+            toValue: 560,
+            duration: 3000,
             easing: Easing.in(Easing.quad),
+            useNativeDriver: native,
+          }),
+          Animated.timing(rotate, {
+            toValue: 1,
+            duration: 3000,
             useNativeDriver: native,
           }),
         ]),
         Animated.timing(opacity, { toValue: 0, duration: 200, useNativeDriver: native }),
-        Animated.timing(y, { toValue: -40, duration: 0, useNativeDriver: native }),
+        Animated.timing(y, { toValue: -48, duration: 0, useNativeDriver: native }),
+        Animated.timing(rotate, { toValue: 0, duration: 0, useNativeDriver: native }),
       ]),
     );
     loop.start();
     return () => loop.stop();
-  }, [delay, opacity, y]);
+  }, [delay, opacity, rotate, y]);
+
+  const spin = rotate.interpolate({ inputRange: [0, 1], outputRange: ['-8deg', '12deg'] });
 
   return (
     <Animated.View
-      style={[
-        styles.fall,
-        { left, opacity, transform: [{ translateY: y }] },
-      ]}
+      style={[styles.fall, { left, opacity, transform: [{ translateY: y }, { rotate: spin }] }]}
       pointerEvents="none"
     >
       <Tile colorId={id} size={size} showLetter />
@@ -77,11 +83,22 @@ function FallingTile({
 export function SplashScreen({ navigation }: Props) {
   const { onboardingDone } = useApp();
   const tiles = useMemo(() => FALLING, []);
+  const tagOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const native = Platform.OS !== 'web';
+    Animated.timing(tagOpacity, {
+      toValue: 1,
+      duration: 500,
+      delay: 420,
+      useNativeDriver: native,
+    }).start();
+  }, [tagOpacity]);
 
   useEffect(() => {
     const id = setTimeout(() => {
       navigation.replace(onboardingDone ? 'MainMenu' : 'Onboarding');
-    }, 1800);
+    }, 2000);
     return () => clearTimeout(id);
   }, [navigation, onboardingDone]);
 
@@ -92,8 +109,10 @@ export function SplashScreen({ navigation }: Props) {
           <FallingTile key={`${t.id}-${i}`} {...t} />
         ))}
         <View style={styles.hero}>
-          <PlinkLogo size="lg" />
-          <Text style={styles.tagline}>SAME COLORS. BIGGER MOMENTS.</Text>
+          <PlinkLogo size="lg" animated />
+          <Animated.Text style={[styles.tagline, { opacity: tagOpacity }]}>
+            SAME COLORS. BIGGER MOMENTS.
+          </Animated.Text>
         </View>
       </View>
     </SafeAreaView>
@@ -107,14 +126,14 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 16,
+    gap: 20,
     zIndex: 2,
   },
   tagline: {
     fontFamily: fonts.semibold,
     color: colors.textMuted,
     fontSize: 13,
-    letterSpacing: 1.4,
+    letterSpacing: 1.6,
     fontWeight: '600',
   },
   fall: {

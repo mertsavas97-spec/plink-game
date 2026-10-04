@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
   content: { flex: 1, justifyContent: 'center', gap: 12 },
   eyebrow: {
     fontFamily: fonts.bold,
-    color: colors.mint,
+    color: colors.cream,
     fontWeight: '700',
     letterSpacing: 1.2,
     fontSize: 12,

@@ -41,12 +41,14 @@ function toKeySet(positions: Position[] | null | undefined): Set<string> {
 export function GameScreen({ navigation, route }: Props) {
   const { colorCount, boardPreset } = route.params;
   const { settings, highScore, recordScore } = useApp();
+  const resolvedPreset =
+    boardPreset in BOARD_PRESETS ? boardPreset : ('8x8' as const);
 
   const engineRef = useRef(
     new GameEngine(
       {
         colorCount,
-        boardSize: BOARD_PRESETS[boardPreset],
+        boardSize: BOARD_PRESETS[resolvedPreset],
       },
       Date.now(),
       settings.undoLimit,
@@ -89,9 +91,9 @@ export function GameScreen({ navigation, route }: Props) {
       isNewHigh,
       won: status === 'won',
       colorCount,
-      boardPreset,
+      boardPreset: resolvedPreset,
     });
-  }, [engine, recordScore, highScore, navigation, colorCount, boardPreset]);
+  }, [engine, recordScore, highScore, navigation, colorCount, resolvedPreset]);
 
   useEffect(() => {
     if (snap.status !== 'playing') {
@@ -135,7 +137,7 @@ export function GameScreen({ navigation, route }: Props) {
     engineRef.current = new GameEngine(
       {
         colorCount,
-        boardSize: BOARD_PRESETS[boardPreset],
+        boardSize: BOARD_PRESETS[resolvedPreset],
       },
       Date.now(),
       settings.undoLimit,
@@ -173,7 +175,7 @@ export function GameScreen({ navigation, route }: Props) {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
       <View style={styles.topBar}>
         <Pressable onPress={exitToMenu} style={styles.iconBtn} accessibilityLabel="Exit">
           <IconClose />
@@ -215,7 +217,7 @@ export function GameScreen({ navigation, route }: Props) {
           <IconRedo color={engine.canRedo() ? colors.text : colors.textMuted} />
         </IconControl>
         <IconControl label="Hint" onPress={onHint}>
-          <IconHint />
+          <IconHint color={colors.cream} />
         </IconControl>
       </View>
 
@@ -223,7 +225,7 @@ export function GameScreen({ navigation, route }: Props) {
         <View style={styles.overlay}>
           <View style={styles.modal}>
             <Text style={styles.pausedTitle}>Paused</Text>
-            <PillButton label="Resume" variant="mint" onPress={onResume} />
+            <PillButton label="Resume" variant="primary" onPress={onResume} />
             <PillButton label="Restart" variant="secondary" onPress={onRestart} />
             <PillButton
               label="Settings"
@@ -269,14 +271,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 4,
-    paddingBottom: 8,
+    paddingTop: 2,
+    paddingBottom: 6,
+    minHeight: 56,
   },
   iconBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -286,12 +291,14 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 12,
     fontWeight: '600',
+    letterSpacing: 0.5,
   },
   score: {
     fontFamily: fonts.extrabold,
     color: colors.text,
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: '800',
+    letterSpacing: -0.5,
   },
   timer: {
     fontFamily: fonts.bold,
@@ -301,11 +308,11 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontVariant: ['tabular-nums'],
   },
-  boardWrap: { flex: 1, justifyContent: 'center', gap: 10 },
+  boardWrap: { flex: 1, justifyContent: 'center', gap: 12, paddingHorizontal: 4 },
   preview: {
     fontFamily: fonts.bold,
     textAlign: 'center',
-    color: colors.mint,
+    color: colors.cream,
     fontSize: 14,
     fontWeight: '700',
   },
@@ -319,13 +326,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 18,
-    paddingBottom: 20,
+    paddingBottom: 16,
+    paddingTop: 4,
     paddingHorizontal: 20,
+    minHeight: 72,
   },
   controlBtn: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
     borderColor: colors.border,
@@ -344,8 +353,8 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 340,
     backgroundColor: colors.surface,
-    borderRadius: 24,
-    padding: 24,
+    borderRadius: 28,
+    padding: 26,
     gap: 12,
     borderWidth: 1,
     borderColor: colors.border,
@@ -353,9 +362,9 @@ const styles = StyleSheet.create({
   pausedTitle: {
     fontFamily: fonts.extrabold,
     color: colors.text,
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: '800',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
   },
 });

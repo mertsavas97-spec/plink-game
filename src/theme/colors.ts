@@ -7,12 +7,14 @@ export const colors = {
   text: '#FFFFFF',
   textMuted: '#9AA3B2',
   textDark: '#0A0E17',
-  cream: '#F2E8D5',
-  mint: '#7DFFB3',
+  cream: '#F0E6D2',
+  creamPressed: '#E4D8C0',
+  /** Accent for toggles / step labels only — not primary CTAs. */
+  accent: '#7DFFB3',
   gold: '#E8C547',
   danger: '#F35A5A',
   selection: '#FFFFFF',
-  overlay: 'rgba(6, 10, 18, 0.78)',
+  overlay: 'rgba(6, 10, 18, 0.82)',
   /** Difficulty accent colors (moodboard Easy/Medium/Hard). */
   difficulty: {
     easy: '#3DDC97',
@@ -22,7 +24,7 @@ export const colors = {
   tile: {
     A: '#2D7CF3',
     B: '#F32D5E',
-    C: '#F32DC7',
+    C: '#E91EC8',
     D: '#F3C72D',
     E: '#2DF3E5',
   },

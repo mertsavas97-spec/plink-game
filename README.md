@@ -20,7 +20,7 @@ Then open in Expo Go (iOS/Android) or press `w` for web.
 
 ## Classic mode (MVP)
 
-- Board sizes: 10×10, 12×14, 16×18
+- Board sizes (phone-first): 8×8, 10×10, 12×12
 - Colors: 3 / 4 / 5
 - Selectable cluster ≥ 2; score only for size > 2
 - Undo / redo / hint

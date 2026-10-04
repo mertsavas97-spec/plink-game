@@ -1,7 +1,9 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Board, Position } from '../engine';
 import { colors } from '../theme/colors';
+import { layout } from '../theme/layout';
 import { Tile } from './Tile';
 
 interface Props {
@@ -16,6 +18,10 @@ function posKey(col: number, row: number) {
   return `${col},${row}`;
 }
 
+/**
+ * Responsive dense board: tiles sized from available width/height after chrome + safe areas.
+ * Prefer fewer/larger cells (see BOARD_PRESETS) so letters stay ~64% of tile edge.
+ */
 export function BoardView({
   board,
   selected,
@@ -24,24 +30,42 @@ export function BoardView({
   hintKeys,
 }: Props) {
   const { width: screenW, height: screenH } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const cols = board.length;
   const rows = board[0]?.length ?? 0;
   const hasSelection = selected.size > 0 || (hintKeys != null && hintKeys.size > 0);
 
-  const tileSize = useMemo(() => {
-    const maxW = screenW - 32;
-    const maxH = screenH * 0.58;
-    if (cols === 0 || rows === 0) return 24;
-    const byW = Math.floor(maxW / cols);
-    const byH = Math.floor(maxH / rows);
-    return Math.max(14, Math.min(byW, byH) - 2);
-  }, [screenW, screenH, cols, rows]);
+  const { tileSize, gap } = useMemo(() => {
+    if (cols === 0 || rows === 0) return { tileSize: layout.comfortTile, gap: layout.tileGap };
 
-  // Render top-down: highest row index at top of screen
+    const horizontalPad = layout.screenPad * 2 + layout.boardPad * 2;
+    const verticalChrome =
+      insets.top +
+      insets.bottom +
+      layout.chromeTop +
+      layout.chromeBottom +
+      56 + // preview text + breathing room
+      layout.boardPad * 2;
+
+    const maxW = Math.max(160, screenW - horizontalPad);
+    const maxH = Math.max(200, screenH - verticalChrome);
+
+    // Include gap in cell pitch
+    const gap = layout.tileGap;
+    const byW = Math.floor((maxW - gap) / cols) - gap;
+    const byH = Math.floor((maxH - gap) / rows) - gap;
+    const raw = Math.min(byW, byH);
+    // Allow larger tiles on phones so letters stay moodboard-bold
+    const tileSize = Math.max(layout.minTile, Math.min(68, raw));
+    return { tileSize, gap };
+  }, [screenW, screenH, cols, rows, insets.top, insets.bottom]);
+
   const rowIndices = useMemo(
     () => Array.from({ length: rows }, (_, i) => rows - 1 - i),
     [rows],
   );
+
+  const cellPitch = tileSize + gap;
 
   return (
     <View style={styles.frame}>
@@ -53,7 +77,7 @@ export function BoardView({
               return (
                 <View
                   key={`e-${col}-${row}`}
-                  style={{ width: tileSize + 2, height: tileSize + 2 }}
+                  style={{ width: cellPitch, height: cellPitch }}
                 />
               );
             }
@@ -64,8 +88,8 @@ export function BoardView({
                 key={key}
                 colorId={cell}
                 size={tileSize}
+                gap={gap}
                 selected={isSelected}
-                contourEdge={isSelected}
                 dimmed={hasSelection && !isSelected}
                 showLetter={showLetters}
                 onPress={() => onTilePress({ col, row })}
@@ -82,8 +106,8 @@ const styles = StyleSheet.create({
   frame: {
     alignSelf: 'center',
     backgroundColor: colors.surface,
-    padding: 6,
-    borderRadius: 16,
+    padding: layout.boardPad,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: colors.border,
   },

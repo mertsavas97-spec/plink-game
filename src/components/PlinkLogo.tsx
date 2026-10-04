@@ -1,5 +1,5 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Easing, Platform, StyleSheet, Text, View } from 'react-native';
 import { LOGO_LETTERS, TILE_LETTERS, colors } from '../theme/colors';
 import { fonts } from '../theme/typography';
 
@@ -7,21 +7,48 @@ const LOGO_COLORS = TILE_LETTERS.map((id) => colors.tile[id]);
 
 interface Props {
   size?: 'sm' | 'md' | 'lg';
+  animated?: boolean;
 }
 
 const SIZES = {
-  sm: { tile: 28, font: 14, gap: 4, radius: 7 },
-  md: { tile: 44, font: 22, gap: 6, radius: 10 },
-  lg: { tile: 58, font: 28, gap: 8, radius: 13 },
+  sm: { tile: 30, font: 16, gap: 5, radius: 8 },
+  md: { tile: 48, font: 24, gap: 7, radius: 12 },
+  lg: { tile: 62, font: 32, gap: 8, radius: 14 },
 } as const;
 
-/** Moodboard tile-block PLINK mark (rounded colored squares with letters). */
-export function PlinkLogo({ size = 'lg' }: Props) {
+/** Moodboard tile-block PLINK mark with gloss + optional entrance motion. */
+export function PlinkLogo({ size = 'lg', animated = false }: Props) {
   const s = SIZES[size];
+  const scales = useRef(LOGO_LETTERS.map(() => new Animated.Value(animated ? 0.6 : 1))).current;
+  const opacities = useRef(LOGO_LETTERS.map(() => new Animated.Value(animated ? 0 : 1))).current;
+
+  useEffect(() => {
+    if (!animated) return;
+    const native = Platform.OS !== 'web';
+    const anims = LOGO_LETTERS.map((_, i) =>
+      Animated.parallel([
+        Animated.timing(scales[i], {
+          toValue: 1,
+          duration: 420,
+          delay: i * 70,
+          easing: Easing.out(Easing.back(1.4)),
+          useNativeDriver: native,
+        }),
+        Animated.timing(opacities[i], {
+          toValue: 1,
+          duration: 280,
+          delay: i * 70,
+          useNativeDriver: native,
+        }),
+      ]),
+    );
+    Animated.stagger(0, anims).start();
+  }, [animated, opacities, scales]);
+
   return (
     <View style={[styles.row, { gap: s.gap }]} accessibilityRole="header" accessibilityLabel="PLINK">
       {LOGO_LETTERS.map((ch, i) => (
-        <View
+        <Animated.View
           key={`${ch}-${i}`}
           style={[
             styles.tile,
@@ -30,12 +57,20 @@ export function PlinkLogo({ size = 'lg' }: Props) {
               height: s.tile,
               borderRadius: s.radius,
               backgroundColor: LOGO_COLORS[i],
+              opacity: opacities[i],
+              transform: [{ scale: scales[i] }],
             },
           ]}
         >
           <View style={[styles.gloss, { borderTopLeftRadius: s.radius, borderTopRightRadius: s.radius }]} />
+          <View
+            style={[
+              styles.depth,
+              { borderBottomLeftRadius: s.radius, borderBottomRightRadius: s.radius },
+            ]}
+          />
           <Text style={[styles.letter, { fontSize: s.font }]}>{ch}</Text>
-        </View>
+        </Animated.View>
       ))}
     </View>
   );
@@ -53,15 +88,24 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: '38%',
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    height: '42%',
+    backgroundColor: 'rgba(255,255,255,0.24)',
+  },
+  depth: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '28%',
+    backgroundColor: 'rgba(0,0,0,0.16)',
   },
   letter: {
     fontFamily: fonts.extrabold,
     fontWeight: '800',
-    color: 'rgba(255,255,255,0.95)',
-    textShadowColor: 'rgba(0,0,0,0.25)',
+    color: '#FFFFFF',
+    zIndex: 2,
+    textShadowColor: 'rgba(0,0,0,0.3)',
     textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 1,
+    textShadowRadius: 2,
   },
 });

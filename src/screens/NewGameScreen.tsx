@@ -12,7 +12,7 @@ import { fonts } from '../theme/typography';
 type Props = NativeStackScreenProps<RootStackParamList, 'NewGame'>;
 
 const COLOR_OPTIONS: ColorCount[] = [3, 4, 5];
-const SIZE_OPTIONS: BoardPreset[] = ['10x10', '12x14', '16x18'];
+const SIZE_OPTIONS: BoardPreset[] = ['8x8', '10x10', '12x12'];
 
 const DIFFICULTY_COLOR: Record<ColorCount, string> = {
   3: colors.difficulty.easy,
@@ -23,7 +23,11 @@ const DIFFICULTY_COLOR: Record<ColorCount, string> = {
 export function NewGameScreen({ navigation }: Props) {
   const { settings } = useApp();
   const [colorCount, setColorCount] = useState<ColorCount>(4);
-  const [boardPreset, setBoardPreset] = useState<BoardPreset>(settings.defaultBoardPreset);
+  const [boardPreset, setBoardPreset] = useState<BoardPreset>(
+    SIZE_OPTIONS.includes(settings.defaultBoardPreset)
+      ? settings.defaultBoardPreset
+      : '8x8',
+  );
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -46,13 +50,18 @@ export function NewGameScreen({ navigation }: Props) {
               style={[
                 styles.colorCircle,
                 { borderColor: active ? accent : colors.border },
-                active && { backgroundColor: `${accent}22` },
+                active && { backgroundColor: `${accent}28` },
               ]}
             >
               <Text style={[styles.colorNum, { color: accent, opacity: active ? 1 : 0.55 }]}>
                 {n}
               </Text>
-              <Text style={[styles.colorLabel, { color: active ? colors.text : accent, opacity: active ? 1 : 0.7 }]}>
+              <Text
+                style={[
+                  styles.colorLabel,
+                  { color: active ? colors.text : accent, opacity: active ? 1 : 0.75 },
+                ]}
+              >
                 {COLOR_COUNT_LABELS[n]}
               </Text>
             </Pressable>
@@ -65,21 +74,21 @@ export function NewGameScreen({ navigation }: Props) {
         {SIZE_OPTIONS.map((preset) => {
           const size = BOARD_PRESETS[preset];
           const active = preset === boardPreset;
-          const cells = preset === '10x10' ? 9 : preset === '12x14' ? 16 : 25;
-          const dim = Math.round(Math.sqrt(cells));
+          const dim = preset === '8x8' ? 3 : preset === '10x10' ? 4 : 5;
+          const cells = dim * dim;
           return (
             <Pressable
               key={preset}
               onPress={() => setBoardPreset(preset)}
               style={[styles.sizePill, active && styles.sizePillActive]}
             >
-              <View style={[styles.miniGrid, { width: dim * 7 + (dim - 1) * 2 }]}>
+              <View style={[styles.miniGrid, { width: dim * 8 + (dim - 1) * 2 }]}>
                 {Array.from({ length: cells }).map((_, i) => (
                   <View
                     key={i}
                     style={[
                       styles.miniCell,
-                      { backgroundColor: active ? colors.mint : colors.border },
+                      { backgroundColor: active ? colors.cream : colors.border },
                     ]}
                   />
                 ))}
@@ -87,7 +96,8 @@ export function NewGameScreen({ navigation }: Props) {
               <Text style={[styles.sizeLabel, active && styles.sizeLabelActive]}>
                 {size.label}
               </Text>
-              <Text style={styles.sizeMeta}>{size.tileCount}</Text>
+              <Text style={styles.sizeMeta}>{size.blurb}</Text>
+              <Text style={styles.sizeCount}>{size.tileCount}</Text>
             </Pressable>
           );
         })}
@@ -116,31 +126,32 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: fonts.extrabold,
     color: colors.text,
-    fontSize: 32,
+    fontSize: 34,
     fontWeight: '800',
-    marginTop: 8,
+    marginTop: 6,
+    letterSpacing: -0.4,
   },
   subtitle: {
     fontFamily: fonts.regular,
     color: colors.textMuted,
     fontSize: 15,
-    marginTop: 4,
+    marginTop: 6,
     marginBottom: 28,
   },
   section: {
     fontFamily: fonts.bold,
     color: colors.text,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
-    letterSpacing: 0.6,
-    marginBottom: 12,
+    letterSpacing: 1,
+    marginBottom: 14,
     textTransform: 'uppercase',
   },
-  colorRow: { flexDirection: 'row', gap: 12, marginBottom: 32 },
+  colorRow: { flexDirection: 'row', gap: 12, marginBottom: 30 },
   colorCircle: {
     flex: 1,
     aspectRatio: 1,
-    maxHeight: 110,
+    maxHeight: 112,
     borderRadius: 999,
     backgroundColor: colors.surface,
     borderWidth: 3,
@@ -148,10 +159,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 4,
   },
-  colorNum: { fontFamily: fonts.extrabold, fontSize: 28, fontWeight: '800' },
+  colorNum: { fontFamily: fonts.extrabold, fontSize: 30, fontWeight: '800' },
   colorLabel: {
     fontFamily: fonts.semibold,
-    color: colors.textMuted,
     fontSize: 12,
     fontWeight: '600',
   },
@@ -159,31 +169,41 @@ const styles = StyleSheet.create({
   sizePill: {
     flex: 1,
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: 16,
+    gap: 7,
+    paddingVertical: 18,
     paddingHorizontal: 8,
-    borderRadius: 20,
+    borderRadius: 22,
     backgroundColor: colors.surface,
     borderWidth: 2,
     borderColor: colors.border,
   },
-  sizePillActive: { borderColor: colors.mint, backgroundColor: colors.surfaceElevated },
+  sizePillActive: {
+    borderColor: colors.cream,
+    backgroundColor: colors.surfaceElevated,
+  },
   miniGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 2,
     justifyContent: 'center',
+    marginBottom: 2,
   },
-  miniCell: { width: 7, height: 7, borderRadius: 1.5 },
+  miniCell: { width: 8, height: 8, borderRadius: 2 },
   sizeLabel: {
     fontFamily: fonts.bold,
     color: colors.textMuted,
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     textAlign: 'center',
   },
   sizeLabelActive: { color: colors.text },
   sizeMeta: {
+    fontFamily: fonts.semibold,
+    color: colors.cream,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  sizeCount: {
     fontFamily: fonts.regular,
     color: colors.textMuted,
     fontSize: 11,

@@ -17,7 +17,7 @@ const LANGUAGES = [
   { code: 'tr', label: 'Türkçe' },
 ];
 
-const GRID_OPTIONS: BoardPreset[] = ['10x10', '12x14', '16x18'];
+const GRID_OPTIONS: BoardPreset[] = ['8x8', '10x10', '12x12'];
 
 export function SettingsScreen({ navigation }: Props) {
   const { settings, updateSettings, resetAllProgress } = useApp();
@@ -28,10 +28,19 @@ export function SettingsScreen({ navigation }: Props) {
   };
 
   const cycleGrid = () => {
-    const idx = GRID_OPTIONS.indexOf(settings.defaultBoardPreset);
+    const current = GRID_OPTIONS.includes(settings.defaultBoardPreset)
+      ? settings.defaultBoardPreset
+      : '8x8';
+    const idx = GRID_OPTIONS.indexOf(current);
     const next = GRID_OPTIONS[(idx + 1) % GRID_OPTIONS.length];
     updateSettings({ defaultBoardPreset: next });
   };
+
+  const gridLabel = BOARD_PRESETS[
+    GRID_OPTIONS.includes(settings.defaultBoardPreset)
+      ? settings.defaultBoardPreset
+      : '8x8'
+  ].label;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -48,7 +57,7 @@ export function SettingsScreen({ navigation }: Props) {
             <Switch
               value={settings.soundEnabled}
               onValueChange={(v) => updateSettings({ soundEnabled: v })}
-              trackColor={{ false: colors.border, true: colors.mint }}
+              trackColor={{ false: colors.border, true: colors.accent }}
               thumbColor={colors.text}
             />
           }
@@ -60,7 +69,7 @@ export function SettingsScreen({ navigation }: Props) {
             <Switch
               value={settings.vibrationEnabled}
               onValueChange={(v) => updateSettings({ vibrationEnabled: v })}
-              trackColor={{ false: colors.border, true: colors.mint }}
+              trackColor={{ false: colors.border, true: colors.accent }}
               thumbColor={colors.text}
             />
           }
@@ -72,7 +81,7 @@ export function SettingsScreen({ navigation }: Props) {
             <Switch
               value={settings.showTileLetters}
               onValueChange={(v) => updateSettings({ showTileLetters: v })}
-              trackColor={{ false: colors.border, true: colors.mint }}
+              trackColor={{ false: colors.border, true: colors.accent }}
               thumbColor={colors.text}
             />
           }
@@ -97,9 +106,7 @@ export function SettingsScreen({ navigation }: Props) {
           hint="Default for New Game"
           right={
             <Pressable onPress={cycleGrid} style={styles.gridBtn}>
-              <Text style={styles.gridBtnText}>
-                {BOARD_PRESETS[settings.defaultBoardPreset].label}
-              </Text>
+              <Text style={styles.gridBtnText}>{gridLabel}</Text>
             </Pressable>
           }
         />
@@ -162,23 +169,24 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: fonts.extrabold,
     color: colors.text,
-    fontSize: 32,
+    fontSize: 34,
     fontWeight: '800',
-    marginBottom: 20,
+    marginBottom: 22,
+    letterSpacing: -0.4,
   },
   section: {
     fontFamily: fonts.bold,
     color: colors.textMuted,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
-    letterSpacing: 0.8,
-    marginTop: 20,
-    marginBottom: 8,
+    letterSpacing: 1,
+    marginTop: 22,
+    marginBottom: 10,
     textTransform: 'uppercase',
   },
   group: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: colors.border,
     overflow: 'hidden',
@@ -187,7 +195,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 15,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
@@ -205,9 +213,9 @@ const styles = StyleSheet.create({
   },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   stepBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: colors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
@@ -224,7 +232,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   gridBtn: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 999,
     backgroundColor: colors.surfaceElevated,
@@ -233,7 +241,7 @@ const styles = StyleSheet.create({
   },
   gridBtnText: {
     fontFamily: fonts.bold,
-    color: colors.mint,
+    color: colors.cream,
     fontSize: 13,
     fontWeight: '700',
   },
@@ -252,7 +260,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  check: { color: colors.mint, fontSize: 18, fontWeight: '800' },
+  check: { color: colors.accent, fontSize: 18, fontWeight: '800' },
   stubNote: {
     fontFamily: fonts.regular,
     color: colors.textMuted,
