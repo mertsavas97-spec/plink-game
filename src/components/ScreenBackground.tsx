@@ -212,7 +212,7 @@ export function ScreenBackground({
           cy={screenH * 0.12}
           radius={glowR}
           color={colors.glowBlueHex}
-          opacity={0.14}
+          opacity={0.16}
         />
       </DriftLayer>
       <DriftLayer dx={-18} dy={20}>
@@ -221,7 +221,7 @@ export function ScreenBackground({
           cy={screenH * 0.82}
           radius={glowR * 0.95}
           color={colors.glowMagentaHex}
-          opacity={0.12}
+          opacity={0.14}
         />
       </DriftLayer>
       {showLogoGlow ? (
@@ -230,7 +230,7 @@ export function ScreenBackground({
           cy={screenH * 0.22}
           radius={screenW * 0.55}
           color={colors.glowCyanHex}
-          opacity={0.1}
+          opacity={0.12}
         />
       ) : null}
 

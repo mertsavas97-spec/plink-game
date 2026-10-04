@@ -88,7 +88,9 @@ function DemoBoard({
   parallax: Animated.AnimatedInterpolation<number>;
   tileSize: number;
 }) {
-  const handInset = layout.boardPad + tileSize * 0.35;
+  // Bottom-right of highlighted cluster tile (col 2, row 2) — not the board corner
+  const pitch = tileSize * (1 + layout.tileGapRatio);
+  const handInset = layout.boardPad + pitch + tileSize * 0.2;
   return (
     <Animated.View
       style={[
